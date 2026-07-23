@@ -9,6 +9,7 @@ from match_creator import *
 
 flag = True
 
+init_database()
 
 while flag:
     print("""

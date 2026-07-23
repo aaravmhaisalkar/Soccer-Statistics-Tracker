@@ -13,7 +13,7 @@ def show_summary(all_matches):
     goals_against= 0
     
     if total_matches > 0:
-        for stats in all_matches.values():
+        for stats in all_matches:
             total_goals += stats['goals']
             total_assists += stats['assists']
             total_confidence += stats['confidence']
