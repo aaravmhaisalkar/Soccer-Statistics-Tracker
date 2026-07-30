@@ -1,12 +1,12 @@
 def display_all_matches(all_matches):
-    if all_matches == {}:
+    if not all_matches:
         print("No data on previous games.")
         return
-    
+    i = 1
     for match in all_matches:
         print(f"""
 -------------------------
-Game {match['id']}
+Game {i}
 -------------------------
 
 Opponent: {match['opponent_name']}
@@ -31,11 +31,12 @@ Notes:
 {match['notes']}
 -------------------------\n
         """)
+        i += 1
     
     
-def load_specific_match(all_matches, number):
+def display_specific_match(all_matches, number):
     number -= 1
-    if all_matches == {}:
+    if not all_matches:
         print("No data on previous matches.")
         return 
     
@@ -47,7 +48,7 @@ def load_specific_match(all_matches, number):
     
     print(f"""
 -------------------------
-Game {stats['id']}
+Game {number+1}
 -------------------------
 
 Opponent: {stats['opponent_name']}
@@ -58,17 +59,41 @@ Result: {stats['your_goals']}-{stats['opponents_goals']} ({stats['result']})
 Position: {stats['position']}
 Role: {stats['role']}
 
-Performance -------------------
+Performance 
 Goals: {stats['goals']}
 Assists: {stats['assists']}
 Minutes Played: {stats['minutes']}
 Confidence: {stats['confidence']}/10
 
-Discipline -------------------
+Discipline 
 Yellow Cards: {stats['yellow_cards']}
 Red Cards: {stats['red_cards']}
 
-Notes -------------------
+Notes
 {stats['notes']}
 -------------------------
 """)
+
+
+def display_summary(summary):
+    print(
+    f'''
+--- SUMMARY ---
+Total Games Played: {summary['total_matches']}
+Total Goals Scored: {summary['total_goals']}
+Total Assists: {summary['total_assists']}
+Total G/A: {summary['total_goals'] + summary['total_assists']}
+Total Minutes Played: {summary['total_min_played']}
+Total Yellow Cards: {summary['total_yellow_cards']}
+Total Red Cards: {summary['total_red_cards']}
+Average Confidence: {summary['average_confidence']:.2f}
+
+
+
+Goals For (GF): {summary['goals_for']}
+Goals Against (GA): {summary['goals_against']}
+Goal Differential (GD): {summary['goal_differential']}
+Record: {summary['wins']} W | {summary['draws']} D | {summary['losses']} L 
+Win Percentage: {summary["win_percentage"]:.2f}%
+    '''
+    )

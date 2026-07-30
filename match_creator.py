@@ -1,4 +1,5 @@
-from input_validation import *
+from input_validation import checking_input,checking_input_float,checking_input_string
+from validation import validate_match_result,validate_player_discipline,validate_player_role,validate_player_stats
 
 infinite_int = 10**18
 
@@ -7,24 +8,67 @@ def create_match():
     opponent_name = str(input("Versus: "))
     date = checking_input_string("Date of the match (MM/DD/YYYY): ", "date")
     competition = checking_input_string("What competition level was the match: ", "competition")
-    result = checking_input_string("Win or loss: ", "results")
     
-    #Player Data
-    role = checking_input_string("Were you a starter or substitute: ", "role")
-    position = checking_input_string("What position did you play this game: ", "position")
-    goals = checking_input("Goals: ", 0, infinite_int)
-    assists = checking_input("Assists: ", 0, infinite_int)
-    minutes_played = checking_input("Minutes Played: ", 0, 120)
-    yellow_cards = checking_input("How many yellow cards: ", 0, 2)
-    if yellow_cards == 2:
-        red_cards = 1
-    else:
-        red_cards = checking_input("How many red cards: ",0, 1)
-    player_confidence = checking_input("How confident do you feel about the performance (0-10): ", 0, 10)
+    #Result --------------------
+    while True:
+        result = checking_input_string("Win/Loss/Draw: ", "result")
+        your_goals = checking_input("How many goals did YOUR team score (GF):  ", 0, infinite_int)
+        opponents_goals = checking_input("How many goals did the OPPONENT team score (GA): ", 0, infinite_int)
+        
+        valid, error_message = validate_match_result(your_goals, opponents_goals, result)
+        
+        if valid:
+            break
+        
+        print(error_message)
+        
+    #Player Role/Minutes/Position --------------------
+    while True:
+        role = checking_input_string("Were you a starter or substitute: ", "role")
+        minutes_played = checking_input("Minutes Played: ", 0, 120)
+        
+        if minutes_played == 0:
+            position = "Bench"
+            goals = assists = yellow_cards = red_cards = 0
+            
+        else:
+            position = checking_input_string("What position did you play this game: ", "position")
+                  
+        valid, error_message = validate_player_role(role,minutes_played,position)  
+        
+        if valid:
+            break
+        
+        print(error_message)
+    
+    #Player Match Stats --------------------
+    if minutes_played > 0:
+        while True:
+            max_goals_or_assists = your_goals
+            goals = checking_input("Goals: ", 0, max_goals_or_assists)
+            assists = checking_input("Assists: ", 0, max_goals_or_assists)
+            
+            valid, error_message = validate_player_stats(max_goals_or_assists, goals, assists)
+                    
+            if valid:
+                break
+            
+            print(error_message)
+        
+        #Player Discipline --------------------
+        while True:
+            yellow_cards = checking_input("How many yellow cards: ", 0, 2)
+            red_cards = checking_input("How many red cards: ",0, 1)
+                
+            valid, error_message = validate_player_discipline(yellow_cards,red_cards)
+                            
+            if valid:
+                break
+            
+            print(error_message)
+                    
+    player_confidence = checking_input_float("How confident do you feel about the performance (0-10): ", 0, 10)
 
-    your_goals = checking_input("How many goals did YOUR team score (GF):  ", 0, infinite_int)
-    opponents_goals = checking_input("How many goals did the OPPONENT team score (GA): ", 0, infinite_int)
-    
     notes = str(input("Any notes for this match? (ex. 'No goals, but played well'): "))
 
     stats = {
@@ -56,5 +100,5 @@ def create_match():
         "notes": notes
     }
     
-    
     return stats
+

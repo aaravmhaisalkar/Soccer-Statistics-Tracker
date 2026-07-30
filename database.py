@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from validation import general_validation
 
 def init_database():
     with sqlite3.connect('match_data.db') as conn:    
@@ -68,7 +69,7 @@ def save_match(stats):
             stats["notes"])
                 )
     except sqlite3.Error as e:
-        print(f'Database error: {e}')
+        return f"Database error: {e}"
 
 def load_all_matches():
     try:
@@ -81,8 +82,8 @@ def load_all_matches():
             return rows
         
     except sqlite3.Error as e:
-        print(f'Database error: {e}')       
-          
+        return f"Database error: {e}"
+             
 def delete_match(number):
     number -= 1
     try:
@@ -94,26 +95,38 @@ def delete_match(number):
             cursor.execute("DELETE FROM matches where id = ?", (match_to_be_deleted_ID,))
             
     except sqlite3.Error as e:
-        print(f'Database error: {e}')
+        return f"Database error: {e}"
                 
-def edit_match(number, stat, update):
+def edit_match(number, updates):
     number -= 1 
-    all_matches = load_all_matches()
-    
-    if all_matches == []:
-        print("No data on previous matches.")
-        return
     try:
         with sqlite3.connect('match_data.db') as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             rows = cursor.execute("SELECT * FROM matches ORDER BY id").fetchall()
-            match_to_be_updated_ID = rows[number]['id']
-            cursor.execute(
-                f"UPDATE matches SET {stat} = ? WHERE id = ?", 
-                (update,match_to_be_updated_ID))
+            
+            match_data = rows[number]
+            match_ID = match_data['id']
+            
+            temp_updated_match = dict(match_data)
+            
+            for stat, value in updates.items():
+                temp_updated_match[stat] = value
+                
+            validation_result, error = general_validation(temp_updated_match)
+            
+                
+            if validation_result:
+                for stat,value in updates.items():
+                    cursor.execute(
+                    f"UPDATE matches SET {stat} = ? WHERE id = ?", 
+                    (value,match_ID))
+            
+            else:
+                return f'Error: {error}'
             
     except sqlite3.Error as e:
-        print(f'Database error: {e}')         
+        return f"Database error: {e}"         
         
+
   
