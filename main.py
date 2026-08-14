@@ -1,14 +1,15 @@
 import json
 from datetime import datetime
-from database import *
-from display import *
-from input_validation import *
-from rules import *
-from stats import *
-from match_creator import *
+from backend.database import save_match,load_all_matches, delete_match, edit_match, init_database
+from backend.display import display_all_matches,display_specific_match,display_summary
+from backend.input_validation import checking_input,checking_input_float,checking_input_string
+from backend.rules import data_input_rules,valid_comps,valid_positions,valid_results,valid_roles,valid_stats
+from backend.stats import show_summary
+from backend.match_creator import create_match
+
 
 flag = True
-
+infinite_int = 10**18
 init_database()
 
 def handle_database_results(error):
@@ -93,7 +94,7 @@ while flag:
         stat_to_be_updated = checking_input_string(f'Which stat would you like to update for Game #{game_number}: ', "stats")
 
         if stat_to_be_updated in ("result", "opponents_goals", "your_goals"):
-            updated_result = checking_input_string(f'Update result in Game #{game_number} to: ','resultk')
+            updated_result = checking_input_string(f'Update result in Game #{game_number} to: ','result')
             updated_your_goals = checking_input(f'Update your goals in Game #{game_number} to: ',0,infinite_int)
             updated_opponent_goals = checking_input(f'Update opponents goals in Game #{game_number} to: ',0,infinite_int)
             

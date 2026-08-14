@@ -1,5 +1,5 @@
-from input_validation import checking_input,checking_input_float,checking_input_string
-from validation import validate_match_result,validate_player_discipline,validate_player_role,validate_player_stats
+from backend.input_validation import checking_input,checking_input_float,checking_input_string
+from backend.validation import validate_match_result,validate_player_discipline,validate_player_role,validate_player_stats
 
 infinite_int = 10**18
 
@@ -11,7 +11,7 @@ def create_match():
     
     #Result --------------------
     while True:
-        result = checking_input_string("Win/Loss/Draw: ", "result")
+        result = checking_input_string("Win/Loss/Draw: ", 'result')
         your_goals = checking_input("How many goals did YOUR team score (GF):  ", 0, infinite_int)
         opponents_goals = checking_input("How many goals did the OPPONENT team score (GA): ", 0, infinite_int)
         

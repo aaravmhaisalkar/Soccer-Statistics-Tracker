@@ -1,95 +1,56 @@
+#Misc Imports 
 from typing import Any
 import asyncio
+from backend.database import init_database
+
+#File imports
+from app_state import AppState
+
+#View Imports
+from views.homepage import HomePage
+
+#Flet Imports
 import flet as ft
 from flet import View,Row, Column, Container, Text, Button, IconButton, AppBar, Divider, VerticalDivider
 from flet import SafeArea, NavigationDrawer, NavigationDrawerDestination
 
-#Universal Custom Controls (Appbar, Containers, Navigation Drawer)
-@ft.control
-class NavigationMenu(NavigationDrawer):
-    def __init__(self) -> None:
-        super().__init__(
-            tile_padding=6,
-            controls=[
-                    Container(content=Text("Navigate", size=17, align=ft.Alignment.CENTER_LEFT, font_family='Chiron GoRound TC'), padding=ft.Padding.all(10),alignment=ft.Alignment.BOTTOM_CENTER),
-                    ft.Divider(),
-                    NavigationDrawerDestination(label='Home', icon=ft.Icons.HOME, selected_icon=ft.Icons.HOME_FILLED),
-                    NavigationDrawerDestination(label='Add Match', icon=ft.Icons.CREATE_OUTLINED, selected_icon=ft.Icons.CREATE),
-                    NavigationDrawerDestination(label='All Matches', icon=ft.Icons.LIST_OUTLINED, selected_icon=ft.Icons.LIST),
-                    NavigationDrawerDestination(label='Specific Match', icon=ft.Icons.SEARCH_OUTLINED, selected_icon=ft.Icons.SEARCH),
-                    NavigationDrawerDestination(label='Season Summary', icon=ft.Icons.STACKED_BAR_CHART_OUTLINED, selected_icon=ft.Icons.STACKED_BAR_CHART),
-                    NavigationDrawerDestination(label='Edit Match', icon=ft.Icons.EDIT_OUTLINED, selected_icon=ft.Icons.EDIT),
-                    NavigationDrawerDestination(label='Delete Match', icon=ft.Icons.DELETE_OUTLINED, selected_icon=ft.Icons.DELETE),
-                ]
-        )
-    
-
-@ft.control
-class HomePageAppBar(AppBar):
-    def __init__(self, page: ft.Page) -> None:
-        self.app_page = page
-        
-        self.menu_button = IconButton(
-                icon=ft.Icons.MENU, 
-                hover_color=ft.Colors.GREY_300,
-                on_click= self.show_drawer
-            )
-        
-        super().__init__(
-            leading= self.menu_button,
-            title = Text(value="App",size=19),
-            bgcolor = ft.Colors.GREY_200
-        )
-        
-    async def show_drawer(self, e):
-        await self.app_page.show_drawer()
+#GUI Components - Flet
+from gui_components.appbar import HomePageAppBar
+from gui_components.navigation_bar import NavigationMenu
+from gui_components.stat_widgets import StatContainer,StatRow
 
 
-
-
-
-
-#Homepage Screen
-class HomePage():
-    def __init__(self, page, state) -> None:
-        self.page = page
-        self.state = state
-        self.view = View(
-            drawer=NavigationMenu(),
-            padding= ft.Padding.all(0),
-            controls=[
-                HomePageAppBar(page),
-            ]
-        )
-    
-#King of Data, main soure of app data
-class AppState:
-    #Anything can update this, since it passes into every view
-    def __init__(self):
-        self.match_data = []
-
-
-#King Class, controls it all
 class App():
     def __init__(self,page,state) -> None:
         self.page :ft.Page = page
         self.state = state
-        self.HomePage = HomePage(page,state)
+        
+        #Using lambda for on-demand creation of the different Views
+        #Good for updated data, without lambda the data is static and not dynamic like I need
+        self.routes = {
+            '/': lambda: HomePage(page,state).view
+        }
         
         self.page.on_route_change = self.route_change
         
     
-    def route_change(self):
+    def route_change(self, e = None):
         self.page.views.clear()
+        self.state.refresh()
+        #Gets route from self.routes dict, easier than 5+ if/else statements
+        view_builder = self.routes.get(self.page.route)
         
-        if self.page.route == '/':
-            self.page.views.append(self.HomePage.view)
+        if view_builder:
+            #Adds the views to the view stack
+            #The () at the end of view_builder is to call the lambda function immediately
+            self.page.views.append(view_builder())            
         
         self.page.update()
 
 
 #Initalize the app and hand it off the App() class
 def main(page: ft.Page) -> None:
+    init_database()
     page.title = "Soccer Statistics Tracker"
     page.window.width = 390
     page.window.height = 844
@@ -102,4 +63,4 @@ def main(page: ft.Page) -> None:
     app.route_change()
      
 if __name__ == "__main__":
-    ft.run(main=main)
+    ft.run(main=main, assets_dir='assets')

@@ -1,5 +1,5 @@
 from datetime import datetime
-from rules import valid_comps,valid_positions,valid_results,valid_roles,valid_stats
+from backend.rules import valid_results,valid_stats,valid_comps,valid_roles,valid_positions,data_input_rules
 
 def checking_input_float(prompt, min_value, max_value):
     while True:
@@ -22,6 +22,7 @@ def checking_input(prompt, min_value, max_value):
             print("Invalid Input")
 
 def checking_input_string(prompt, usage):
+    paramaters = {}
     if usage == "result":
         paramaters = valid_results
         

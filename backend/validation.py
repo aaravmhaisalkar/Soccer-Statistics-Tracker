@@ -1,4 +1,5 @@
-def validate_match_result(your_goals, opponents_goals, result):
+from typing import Tuple, Optional
+def validate_match_result(your_goals, opponents_goals, result) -> Tuple[bool, Optional[str]]:
     if result == "Win":
         if your_goals <= opponents_goals:
             return False, "Your goals can't be lower then opponent's goals when the result is a win."
@@ -11,6 +12,7 @@ def validate_match_result(your_goals, opponents_goals, result):
         if your_goals != opponents_goals:
             return False, "Your goals can't be different from the opponent's goals when the result is a draw."
         return True, None
+    return False, "Bro idk how you got here"
     
 def validate_player_role(role, minutes_played, position):
     if role == "Starter":
@@ -32,7 +34,6 @@ def validate_player_discipline(yellow_cards, red_cards):
         
 
 def general_validation(match):
-    
     result, error = validate_match_result(
         match["your_goals"],
         match["opponents_goals"],

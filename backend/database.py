@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from validation import general_validation
+from backend.validation import general_validation
 
 def init_database():
     with sqlite3.connect('match_data.db') as conn:    
@@ -25,8 +25,6 @@ def init_database():
             )
             """)
 
-      
-FILE = 'matches.json'
 
 def save_match(stats):
     try:
