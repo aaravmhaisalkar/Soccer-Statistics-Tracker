@@ -1,17 +1,32 @@
 from typing import Any
-import asyncio
 import flet as ft
-from flet import View,Row, Column, Container, Text, Button, IconButton, AppBar, Divider, VerticalDivider
-from flet import SafeArea, NavigationDrawer, NavigationDrawerDestination
+from flet import Container, Text, NavigationDrawer, NavigationDrawerDestination
 
-#Universal Custom Controls (Appbar, Containers, Navigation Drawer)
+
 @ft.control
 class NavigationMenu(NavigationDrawer):
-    def __init__(self) -> None:
+    def __init__(self, page) -> None:
+        self.app_page = page
+                
+        self.routes = {
+            0 : '/',
+            1 : '/add'
+        }
+        
         super().__init__(
             tile_padding=3,
+            on_change = self.handle_change,
             controls=[
-                    Container(content=Text("Navigate", size=17, align=ft.Alignment.CENTER_LEFT, font_family='Chiron GoRound TC'), padding=ft.Padding.all(10),alignment=ft.Alignment.BOTTOM_CENTER),
+                    Container(
+                        content=Text(
+                            value="Navigate", 
+                            size=17, 
+                            align=ft.Alignment.CENTER_LEFT, 
+                            font_family='Chiron GoRound TC',
+                            theme_style=ft.TextThemeStyle.TITLE_MEDIUM
+                        ), 
+                        padding=ft.Padding.only(left=28, top=20, bottom=12),
+                    ),
                     ft.Divider(),
                     NavigationDrawerDestination(label='Home', icon=ft.Icons.HOME, selected_icon=ft.Icons.HOME_FILLED),
                     NavigationDrawerDestination(label='Add Match', icon=ft.Icons.CREATE_OUTLINED, selected_icon=ft.Icons.CREATE),
@@ -23,3 +38,14 @@ class NavigationMenu(NavigationDrawer):
                 ]
         )
     
+    async def handle_change(self,e: ft.Event[ft.NavigationDrawer]):
+        route = self.routes.get(e.control.selected_index)
+        
+        if route:
+            print(f'seleted: {route}')
+            await self.page.push_route(route=route)
+
+        else:
+            print("yea fuck")
+        
+        await self.page.close_drawer()

@@ -32,10 +32,10 @@ class StatRow(Container):
         
         for index, data in enumerate(self.data_dict):
             if index != (len(self.data_dict) - 1):
-                controls.append(StatContainer(page, data))
+                controls.append(StatContainer(self.app_page, data))
                 controls.append(VerticalDivider(width=3, color=ft.Colors.BLACK, leading_indent=10, trailing_indent=10))
             else:
-                controls.append(StatContainer(page, data))
+                controls.append(StatContainer(self.app_page, data))
 
             
             

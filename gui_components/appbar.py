@@ -2,7 +2,7 @@ import flet as ft
 from flet import Text, IconButton, AppBar
 
 @ft.control
-class HomePageAppBar(AppBar):
+class UniversalAppBar(AppBar):
     def __init__(self, page: ft.Page) -> None:
         self.app_page = page
         
@@ -14,7 +14,7 @@ class HomePageAppBar(AppBar):
         
         super().__init__(
             leading= self.menu_button,
-            title = Text(value="App",size=19),
+            title = Text(value="Soccer Statistics Tracker",size=19),
             bgcolor = ft.Colors.GREY_200
         )
         

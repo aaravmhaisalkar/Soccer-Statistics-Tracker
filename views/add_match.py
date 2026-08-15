@@ -1,5 +1,6 @@
 #Flet Imports
 import flet as ft
+from flet import View
 
 #GUI Components - Flet
 from gui_components.appbar import UniversalAppBar
@@ -7,25 +8,18 @@ from gui_components.navigation_bar import NavigationMenu
 from gui_components.stat_widgets import StatRow
 
 #Homepage Screen
-class HomePage():
+class Add_Match():
     def __init__(self, page, state, nav_menu) -> None:
         self.page = page
         self.state = state
         self.nav_menu = nav_menu
         
-        data_dict = [
-            [self.state.all_matches_summary['wins'],'Wins'],
-            [self.state.all_matches_summary['draws'],'Draws'],
-            [self.state.all_matches_summary['losses'],'Losses']
-        ]
-        
-        self.view = ft.View(
+        self.view = View(
             drawer=self.nav_menu,
             padding= ft.Padding.all(0),
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                UniversalAppBar(self.page),
-                StatRow(self.page,data_dict)
+                UniversalAppBar(page=self.page)
             ]
         )
     
