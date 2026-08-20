@@ -31,7 +31,7 @@ def validate_player_discipline(yellow_cards, red_cards):
             return False, "A player cannot have 2 yellow cards but have 0 red cards."
         
     return True, None
-        
+
 
 def general_validation(match):
     result, error = validate_match_result(
@@ -45,7 +45,7 @@ def general_validation(match):
 
     result, error = validate_player_role(
         match["role"],
-        match["minutes"],
+        match["minutes_played"],
         match["position"]
     )
     

@@ -47,25 +47,26 @@ def save_match(stats):
                 your_goals ,
                 opponents_goals ,
                 notes)
-            VALUES (?,?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-            stats["opponent_name"],
-            stats["date"],
-            stats["competition"],
-            stats["result"],
-            stats["role"],
-            stats["position"],
-            stats["goals"] ,
-            stats["assists"] ,
-            stats["minutes"] ,
-            stats["yellow_cards"] ,
-            stats["red_cards"] ,
-            stats["confidence"] ,
-            stats["your_goals"] ,
-            stats["opponents_goals"] ,
-            stats["notes"])
+                VALUES (?,?,?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    stats["opponent_name"],
+                    stats["date"],
+                    stats["competition"],
+                    stats["result"],
+                    stats["role"],
+                    stats["position"],
+                    stats["goals"] ,
+                    stats["assists"] ,
+                    stats["minutes_played"] ,
+                    stats["yellow_cards"] ,
+                    stats["red_cards"] ,
+                    stats["confidence_level"] ,
+                    stats["your_goals"] ,
+                    stats["opponents_goals"] ,
+                    stats["notes"]
                 )
+            )
     except sqlite3.Error as e:
         return f"Database error: {e}"
 

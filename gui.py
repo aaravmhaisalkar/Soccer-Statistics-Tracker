@@ -1,9 +1,12 @@
 #Misc Imports 
 from typing import Any
 import asyncio
+import datetime
 
 #File imports
-from backend.database import load_all_matches,init_database
+from backend.validation import validate_match_result,validate_player_discipline,validate_player_role,validate_player_stats,general_validation
+from backend.input_validation_gui import general_input_check
+from backend.database import load_all_matches,init_database, save_match
 from backend.stats import show_summary
 
 #Flet Imports
@@ -12,6 +15,7 @@ from flet import Row, Column, Container, Text, VerticalDivider
 
 infinite_int = 10**18
 
+#Custom Unique Controls (Appbar, Navigation Drawer, Stat Containers) --------
 @ft.control
 class UniversalAppBar(ft.AppBar):
     def __init__(self, page: ft.Page) -> None:
@@ -131,14 +135,14 @@ class StatRow(Container):
         )
 
 
-
+#Universal Controls (Text, Number, Dropdown, Float) -------------
 @ft.control
 class UniversalTextInputField(ft.TextField):
     def __init__(self, page: ft.Page, label) -> None:
         self.app_page = page  
         
         super().__init__(
-            label=label
+            label=label,
         )
 
 @ft.control
@@ -192,7 +196,7 @@ class UniversalFloatInputField(ft.TextField):
       
 @ft.control  
 class UniversalDropdownInput(ft.Dropdown):
-    def __init__(self, page: ft.Page, option_values) -> None:
+    def __init__(self, page: ft.Page, label,option_values) -> None:
         self.app_page = page  
         self.option_list = []
         self.option_values = option_values
@@ -202,26 +206,52 @@ class UniversalDropdownInput(ft.Dropdown):
             
         
         super().__init__(
+            label=label,
             options= self.option_list
         )
 
-@ft.control
-class UniversalAutoCompletetInput(ft.AutoComplete):
-    def __init__(self, page: ft.Page, suggestion_values) -> None:
+
+@ft.control  
+class UniversalDateInput(ft.Container):
+    def __init__(self, page: ft.Page) -> None:
         self.app_page = page  
-        self.suggestion_list = []
-        self.suggestion_values = suggestion_values
         
-        for long,converted in self.suggestion_values:
-            self.suggestion_list.append(ft.AutoCompleteSuggestion(key=converted,value=converted))
-            
+        self.today = datetime.datetime.today()
+        self.selected_date = datetime.datetime.today().strftime('%m/%d/%Y')
+        self.date_selected_text = ft.Text(value="", size=15)
+
         
-        super().__init__(
-            suggestions=self.suggestion_list,
-            
+        self.date_picker = ft.DatePicker(
+            last_date=self.today,
+            current_date=self.today,
+            on_change=self.date_picked,
         )
 
         
+        super().__init__(
+            width=300,
+            height=50,
+            padding=ft.Padding.all(8),
+            border_radius=ft.BorderRadius.all(4),
+            border=ft.Border.all(1, ft.Colors.BLACK),
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                controls=[
+                    self.date_selected_text,
+                    ft.Button(
+                        width=140,
+                        icon=ft.Icons.CALENDAR_MONTH, 
+                        content="Pick Date", 
+                        on_click=lambda _: self.app_page.show_dialog(self.date_picker)
+                    )
+                ]
+            )
+        )
+    
+    def date_picked(self, e):
+        self.selected_date = e.control.value.strftime('%m/%d/%Y')
+        self.date_selected_text.value = f'{self.selected_date}'
+
 
 
 class Add_Match():
@@ -231,29 +261,29 @@ class Add_Match():
         self.nav_menu = nav_menu
         
         self.positions = [
-            ("gk goalkeeper keeper goalie", "Goalkeeper"),
-            ("cb center back centre back central defender", "Center Back"),
-            ("lb left back left fullback", "Left Back"),
-            ("rb right back right fullback", "Right Back"),
-            ("fb fullback full back", "Fullback"),
-            ("lwb left wing back", "Left Wing Back"),
-            ("rwb right wing back", "Right Wing Back"),
-            ("wb wing back", "Wing Back"),
-            ("cdm dm defensive midfielder holding midfielder 6", "Defensive Midfielder"),
-            ("cm central midfielder midfielder mid 8", "Central Midfielder"),
-            ("cam am attacking midfielder 10", "Attacking Midfielder"),
-            ("lm left midfielder", "Left Midfielder"),
-            ("rm right midfielder", "Right Midfielder"),
-            ("lw left wing left winger", "Left Wing"),
-            ("rw right wing right winger", "Right Wing"),
-            ("winger wing w", "Winger"),
-            ("cf center forward centre forward false 9 false nine", "Center Forward"),
-            ("st striker forward 9", "Striker"),
-            ("ss second striker shadow striker", "Second Striker"),
-            ("sw sweeper", "Sweeper"),
-            ("multiple multi various rotated", "Multiple Positions"),
+            "Goalkeeper",
+            "Center Back",
+            "Left Back",
+            "Right Back",
+            "Fullback",
+            "Left Wing Back",
+            "Right Wing Back",
+            "Wing Back",
+            "Defensive Midfielder",
+            "Central Midfielder",
+            "Attacking Midfielder",
+            "Left Midfielder",
+            "Right Midfielder",
+            "Left Wing",
+            "Right Wing",
+            "Winger",
+            "Center Forward",
+            "Striker",
+            "Second Striker",
+            "Sweeper",
+            "Multiple Positions",
         ]
-        
+                
         
         self.input_controls = {
             #Ts is very unoptiomized i think 
@@ -264,23 +294,24 @@ class Add_Match():
             #Match Data -----------
             "text1": ft.Text(value="Match Data",size=14),
             "opponent_name": UniversalTextInputField(page=self.app_page,label="Opponent Name"),
-            "date": UniversalTextInputField(page=self.app_page,label="Date"),
+            "date": UniversalDateInput(page=self.app_page),
             "competition": UniversalTextInputField(page=self.app_page,label="Competition"),
             "divider1": ft.Divider(),
             
             #Result ---------------
             "text2": ft.Text(value="Result",size=14),
-            "result": UniversalDropdownInput(page = self.app_page, option_values=["Win","Loss","Draw"]),
+            "result": UniversalDropdownInput(page = self.app_page, label="Result", option_values=["Win","Loss","Draw"]),
             "your_goals": UniversalNumberInputField(page=self.app_page,label="Your Goals",lower_bound=0,upper_bound=infinite_int),
             "opponents_goals": UniversalNumberInputField(page=self.app_page,label="Opponents Goals",lower_bound=0,upper_bound=infinite_int),
             "divider2": ft.Divider(),
             
             #Player Role/Minutes/Position -----------
             "text3": ft.Text(value="Role/Minutes/Position",size=14),
-            "role": UniversalDropdownInput(page = self.app_page, option_values=["Starter","Substitute"]),
-            #Note to self/TODO: If you ever wanna add sum, add a checkbox here with the label "Went to Extra Time?"
+            "role": UniversalDropdownInput(page = self.app_page, label="Role", option_values=["Starter","Substitute"]),
+            #TODO: If you ever wanna add sum, add a checkbox here with the label "Went to Extra Time?"
             "minutes_played": UniversalNumberInputField(page=self.app_page,label="Minutes Played",lower_bound=0,upper_bound=120),
-            "position":  UniversalAutoCompletetInput(page=self.app_page, suggestion_values=self.positions),
+            # TODO: swap position field to UniversalAutoCompleteInput once label + focus-border are sorted
+            "position":  UniversalDropdownInput(page=self.app_page, label="Position", option_values=self.positions),
             "divider3": ft.Divider(),
             
             #Player Match Stats ----------
@@ -308,30 +339,36 @@ class Add_Match():
         
         self.view = ft.View(
             drawer=self.nav_menu,
-            padding= ft.Padding.all(0),
+            padding= ft.Padding(0,0,0,20),
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             scroll=ft.ScrollMode.AUTO,
             controls=[
                 UniversalAppBar(self.app_page),
                 *self.input_controls.values(),
                 ft.Button(
+                    width=100,
+                    height = 30,
                     content="Submit",
-                    on_click=self.save_data
+                    on_click=self.save_data,
+                    bgcolor=ft.Colors.GREEN_200,
+                    elevation=3,
                 )
             ]
         )
         
     def save_data(self,e):
-        print("ok so you clicked sumbit")
-        data = []
+        data = {}
         for control in self.input_controls.values():
             if isinstance(control, (UniversalTextInputField, UniversalFloatInputField,UniversalNumberInputField, UniversalDropdownInput)):
-                data.append(control.value)
+                data[str(control.label)] = control.value
+                control.value = ''
+                
+            elif isinstance(control, UniversalDateInput):
+                data["Date"] = control.selected_date
         
-        print(data)
-            
-            
-    
+        self.state.save_data(data)
+               
+        
 
 class HomePage():
     def __init__(self, page, state, nav_menu) -> None:
@@ -386,7 +423,29 @@ class AppState:
         data = show_summary(all_matches=all_matches)
         
         self.all_matches_summary = data
+    
+    def save_data(self,data_dict):
+        #Validate Data
+        print(data_dict)
+        match = {}
         
+        for field_name, value in data_dict.items():
+            key = field_name.lower().replace(" ","_")
+            result, value = general_input_check(key,value)
+
+            if not result:
+                print(f'Error: {value}')
+                
+            match[key] = value
+            
+        #Send Data to Database
+        validation_result, error = general_validation(match=match)
+                  
+        if validation_result:
+            save_match(match)
+        
+        else:
+            return f'Error: {error}'
     
 class Router():
     @staticmethod

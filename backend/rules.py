@@ -392,19 +392,20 @@ valid_roles = {
     "came on": "Substitute",
     "off the bench": "Substitute",
 }
+
 data_input_rules = {
     "result": {
         "type": "string",
         "category": "result",
         "display_string": "result"
     },
-    "confidence": {
+    "confidence_level": {
         "type": "number",
         "min": 0,
         "max": 10,
         "display_string": "confidence"
     },
-    "minutes": {
+    "minutes_played": {
         "type": "number",
         "min": 0,
         "max": 120,
@@ -475,4 +476,5 @@ data_input_rules = {
         "display_string": "notes"
     },
 }
+
 
