@@ -58,10 +58,10 @@ def save_match(stats):
                     stats["position"],
                     stats["goals"] ,
                     stats["assists"] ,
-                    stats["minutes_played"] ,
+                    stats["minutes"] ,
                     stats["yellow_cards"] ,
                     stats["red_cards"] ,
-                    stats["confidence_level"] ,
+                    stats["confidence"] ,
                     stats["your_goals"] ,
                     stats["opponents_goals"] ,
                     stats["notes"]

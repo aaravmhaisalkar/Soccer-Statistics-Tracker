@@ -364,8 +364,26 @@ valid_positions = {
     "sw": "Sweeper",
     "sweeper": "Sweeper",
 
+    #Bench
+    "bench": "Bench", 
+    "benched": "Bench", 
+    "sub": "Bench", 
+    "substitute": "Bench", 
+    "reserve": "Bench", 
+    "reserves": "Bench", 
+    "backup": "Bench", "backups": 
+    "Bench", "second string": "Bench", 
+    "sideline": "Bench", 
+    "sidelines": "Bench", 
+    "rotational": "Bench", 
+    "rotation": "Bench", 
+    "spare": "Bench", 
+    "alternate": "Bench", 
+    "interchange": "Bench",
+    
     #Other/Multiple
     "multiple": "Multiple Positions",
+    "multiple positions": "Multiple Positions",
     "multi": "Multiple Positions",
     "various": "Multiple Positions",
     "rotated": "Multiple Positions",
@@ -399,13 +417,13 @@ data_input_rules = {
         "category": "result",
         "display_string": "result"
     },
-    "confidence_level": {
+    "confidence": {
         "type": "number",
         "min": 0,
         "max": 10,
         "display_string": "confidence"
     },
-    "minutes_played": {
+    "minutes": {
         "type": "number",
         "min": 0,
         "max": 120,
@@ -468,7 +486,7 @@ data_input_rules = {
         "display_string": "red cards"
     },
     "opponent_name": {
-        "type": "text",
+        "type": "name",
         "display_string": "opponent name"
     },
     "notes": {

@@ -260,6 +260,19 @@ class Add_Match():
         self.state = state
         self.nav_menu = nav_menu
         
+        self.error_column = Column(
+            disabled=True,
+            controls=[],
+        )
+        
+        self.error_container = Container(
+            disabled=True,
+            width = 275,
+            content=self.error_column,
+            border_radius=ft.BorderRadius.all(5),
+            padding=ft.Padding.all(15)
+        )
+        
         self.positions = [
             "Goalkeeper",
             "Center Back",
@@ -281,6 +294,7 @@ class Add_Match():
             "Striker",
             "Second Striker",
             "Sweeper",
+            "Bench",
             "Multiple Positions",
         ]
                 
@@ -309,7 +323,7 @@ class Add_Match():
             "text3": ft.Text(value="Role/Minutes/Position",size=14),
             "role": UniversalDropdownInput(page = self.app_page, label="Role", option_values=["Starter","Substitute"]),
             #TODO: If you ever wanna add sum, add a checkbox here with the label "Went to Extra Time?"
-            "minutes_played": UniversalNumberInputField(page=self.app_page,label="Minutes Played",lower_bound=0,upper_bound=120),
+            "minutes_played": UniversalNumberInputField(page=self.app_page,label="Minutes",lower_bound=0,upper_bound=120),
             # TODO: swap position field to UniversalAutoCompleteInput once label + focus-border are sorted
             "position":  UniversalDropdownInput(page=self.app_page, label="Position", option_values=self.positions),
             "divider3": ft.Divider(),
@@ -328,7 +342,7 @@ class Add_Match():
             
             #Confidence
             "text6": ft.Text(value="Confidence (0-10)",size=14),
-            "confidence": UniversalFloatInputField(page=self.app_page,label="Confidence Level",lower_bound=0,upper_bound=10),
+            "confidence": UniversalFloatInputField(page=self.app_page,label="Confidence",lower_bound=0,upper_bound=10),
             "divider6": ft.Divider(),
             
             #Notes
@@ -345,6 +359,7 @@ class Add_Match():
             controls=[
                 UniversalAppBar(self.app_page),
                 *self.input_controls.values(),
+                self.error_container,
                 ft.Button(
                     width=100,
                     height = 30,
@@ -361,14 +376,43 @@ class Add_Match():
         for control in self.input_controls.values():
             if isinstance(control, (UniversalTextInputField, UniversalFloatInputField,UniversalNumberInputField, UniversalDropdownInput)):
                 data[str(control.label)] = control.value
-                control.value = ''
                 
             elif isinstance(control, UniversalDateInput):
                 data["Date"] = control.selected_date
         
-        self.state.save_data(data)
-               
+        result, returned_value = self.state.save_data(data)
         
+        if result:
+            self.error_container.disabled = False
+            self.error_column.disabled = False
+            self.error_container.bgcolor = ft.Colors.GREEN_100
+            self.error_column.controls = [Text("Success! Game added to database.")]
+            
+            for control in self.input_controls.values():
+                if isinstance(control, (UniversalTextInputField, UniversalFloatInputField,UniversalNumberInputField)):
+                    control.value = ""
+                                
+                elif isinstance(control, UniversalDropdownInput):
+                    control.value = None
+                                
+                elif isinstance(control, UniversalDateInput):
+                    control.selected_date = ""
+                    control.date_selected_text.value = ""
+
+            
+            self.app_page.update()
+        
+        else:
+            unique_returned_values = set(returned_value.values())
+            self.error_container.disabled = False
+            self.error_column.disabled = False
+            self.error_container.bgcolor = ft.Colors.RED_100
+            self.error_column.controls = [Text("Errors:")]
+            for index,value in enumerate(unique_returned_values,1):
+                self.error_column.controls.append(Text(f'{index}. {value}'))
+                
+            self.app_page.update()
+                  
 
 class HomePage():
     def __init__(self, page, state, nav_menu) -> None:
@@ -392,7 +436,6 @@ class HomePage():
             ]
         )
 
-
 class Error404_NotFound_Page():
     def __init__(self, page, state, nav_menu) -> None:
         self.app_page = page
@@ -414,8 +457,6 @@ class Error404_NotFound_Page():
 class AppState:
     #Anything can update this, since it passes into every view
     def __init__(self):
-        self.inputted_data = {}
-        self.match_data = []
         self.all_matches_summary = {}
 
     def refresh(self):
@@ -426,26 +467,33 @@ class AppState:
     
     def save_data(self,data_dict):
         #Validate Data
-        print(data_dict)
+        errors = {}
         match = {}
         
         for field_name, value in data_dict.items():
             key = field_name.lower().replace(" ","_")
             result, value = general_input_check(key,value)
-
             if not result:
-                print(f'Error: {value}')
-                
-            match[key] = value
-            
-        #Send Data to Database
-        validation_result, error = general_validation(match=match)
-                  
-        if validation_result:
-            save_match(match)
+                errors[key] = value
+            else:
+                match[key] = value
         
-        else:
-            return f'Error: {error}'
+        #Return if specific values are flawed
+        if len(errors) > 0:
+            print(errors)
+            return False, errors
+        
+        validation_result, returned_value = general_validation(match)
+        
+        #Send Data to Database
+        if not validation_result:
+            errors["match"] = value
+            print(errors)
+            return False, errors
+            
+        save_match(match)
+        return True, None
+            
     
 class Router():
     @staticmethod
@@ -457,11 +505,6 @@ class Router():
                 return Add_Match(*general_controls).view    
             case _:
                 return Error404_NotFound_Page(*general_controls).view
-                
-                
-
-
-
 
 class App():
     def __init__(self,page,state) -> None:

@@ -45,7 +45,7 @@ def general_validation(match):
 
     result, error = validate_player_role(
         match["role"],
-        match["minutes_played"],
+        match["minutes"],
         match["position"]
     )
     

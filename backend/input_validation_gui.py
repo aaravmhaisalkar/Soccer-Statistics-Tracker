@@ -10,6 +10,9 @@ def general_input_check(key, value):
     
     if current_data_rule['type'] == "text":
         return True, value
+
+    if value == '':
+            return False, "All fields must be filled"
     
     if current_data_rule['type'] == "number":
         min_value = current_data_rule['min']
@@ -19,7 +22,14 @@ def general_input_check(key, value):
         if min_value <= cleaned_value <= max_value:
             return True, cleaned_value
         else:
-            return False, "Error with given value"
+            return False, f"Error with {current_data_rule['display_string']} value"
+    
+    elif current_data_rule['type'] == "name":
+        cleaned_value = str(value).lower().strip()
+        if len(cleaned_value) < 1:
+            return False, f"Error with {current_data_rule['display_string']}. Too short / No Value."
+        else:
+            return True, cleaned_value
         
     elif current_data_rule['type'] == "string":
         usage = current_data_rule['category']
@@ -27,10 +37,10 @@ def general_input_check(key, value):
         if usage == "date":
             date = str(value).lower().strip()
             checked_date = datetime.strptime(date, "%m/%d/%Y").date()
-            if checked_date < datetime.today().date():
+            if checked_date <= datetime.today().date():
                 return True, date
             else:
-                return False, "Date Input Error"
+                return False, f"Error with {current_data_rule['display_string']} value"
         
         parameters_map = {
             "result": valid_results, "stats": valid_stats,
@@ -43,5 +53,7 @@ def general_input_check(key, value):
         
         if cleaned_value in paramaters:
             return True, paramaters[cleaned_value]
-        return False, "Error with given value"
+        
+        return False, f"Error with {current_data_rule['display_string']} value"
+    
     return False, "Invalid Prompt"
