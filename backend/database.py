@@ -77,7 +77,6 @@ def load_all_matches():
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM matches ORDER BY id")
             rows = cursor.fetchall()
-            
             return rows
         
     except sqlite3.Error as e:

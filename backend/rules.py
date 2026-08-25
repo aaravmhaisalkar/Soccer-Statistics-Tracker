@@ -495,4 +495,27 @@ data_input_rules = {
     },
 }
 
-
+gui_positions = [
+            "Goalkeeper",
+            "Center Back",
+            "Left Back",
+            "Right Back",
+            "Fullback",
+            "Left Wing Back",
+            "Right Wing Back",
+            "Wing Back",
+            "Defensive Midfielder",
+            "Central Midfielder",
+            "Attacking Midfielder",
+            "Left Midfielder",
+            "Right Midfielder",
+            "Left Wing",
+            "Right Wing",
+            "Winger",
+            "Center Forward",
+            "Striker",
+            "Second Striker",
+            "Sweeper",
+            "Bench",
+            "Multiple Positions",
+        ]

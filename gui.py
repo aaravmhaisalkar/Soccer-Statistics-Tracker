@@ -1,19 +1,26 @@
 #Misc Imports 
 from typing import Any
 import asyncio
+import inspect
 import datetime
 
 #File imports
-from backend.validation import validate_match_result,validate_player_discipline,validate_player_role,validate_player_stats,general_validation
+from backend.validation import general_validation
 from backend.input_validation_gui import general_input_check
-from backend.database import load_all_matches,init_database, save_match
+from backend.display import display_all_matches
+from backend.database import load_all_matches,init_database, save_match, delete_match
 from backend.stats import show_summary
+from backend.rules import gui_positions
+#Control Imports
+from universal_controls import UniversalDateInput,UniversalDropdownInput,UniversalFloatInputField,UniversalNumberInputField,UniversalTextInputField
 
 #Flet Imports
 import flet as ft
+from flet_datatable2 import DataTable2, DataColumn2, DataColumnSize, DataRow2
 from flet import Row, Column, Container, Text, VerticalDivider
 
 infinite_int = 10**18
+
 
 #Custom Unique Controls (Appbar, Navigation Drawer, Stat Containers) --------
 @ft.control
@@ -43,7 +50,12 @@ class NavigationMenu(ft.NavigationDrawer):
                 
         self.routes = {
             0 : '/home',
-            1 : '/add'
+            1 : '/add',
+            2 : '/all_matches',
+            3 : '/specific_match',
+            4 : '/summary',
+            
+            6 : '/delete'
         }
         
         super().__init__(
@@ -80,7 +92,7 @@ class NavigationMenu(ft.NavigationDrawer):
 
         else:
             print("ok so were firing 'bullshit' route ")
-            await self.app_page.push_route(route='bullshit')
+            await self.app_page.push_route(route='_')
             
         
         await self.page.close_drawer()
@@ -103,6 +115,199 @@ class StatContainer(Container):
                 ]
             )
         )
+
+#For All Matches - Less info just basics (name, date, goals/assists, ect...).
+#Hooked up to any function given, and on click can go to it / do the action.
+@ft.control
+class MatchDisplayTable_SMALL(Container):
+    def __init__(self, page: ft.Page, state, data, nav_menu, on_tap_function) -> None:
+        self.app_page = page
+        self.data = data
+        self.state = state
+        self.nav_menu = nav_menu
+        self.on_tap_function = on_tap_function
+        
+        self.row_list = []
+        
+        def handle_tap():
+            if inspect.iscoroutinefunction(self.on_tap_function):
+                return lambda e, num = id: self.app_page.run_task(self.on_tap_function ,e,num)
+            else:
+                return lambda e, num = id: self.on_tap_function(e,num)
+                
+        
+        for id, match in self.data.items():
+            self.row_list.append(
+                DataRow2(
+                    cells=[
+                        ft.DataCell(content=ft.Text(str(id))),
+                        ft.DataCell(content=ft.Text(f'{match['opponent_name']}')),
+                        ft.DataCell(content=ft.Text(f'{match['date']}')),
+                        ft.DataCell(content=ft.Text(f'{match['result']}')),
+                        ft.DataCell(content=ft.Text(f'{match['your_goals']}-{match['opponents_goals']}')),
+                        ft.DataCell(content=ft.Text(str(match['goals']))),
+                        ft.DataCell(content=ft.Text(str(match['assists'])))
+                    ],
+                    on_tap= handle_tap()
+                )
+            )
+        
+        super().__init__(
+            border=ft.Border.all(1, ft.Colors.BLACK),
+            border_radius=ft.BorderRadius.all(10),
+            padding=ft.Padding.all(5),
+            content=Row(
+                scroll=ft.ScrollMode.ALWAYS,
+                controls=[
+                    DataTable2(
+                        width=1000,
+                        columns=[
+                            DataColumn2(size=DataColumnSize.S, label=ft.Text("#"), tooltip="Number", numeric=True),
+                            DataColumn2(size=DataColumnSize.L, label=ft.Text("Opponent"), tooltip="Opponent"),
+                            DataColumn2(size=DataColumnSize.L, label=ft.Text("Date"), tooltip="Date"),
+                            DataColumn2(size=DataColumnSize.M, label=ft.Text("Result"), tooltip="Result"),
+                            DataColumn2(size=DataColumnSize.M, label=ft.Text("Score"), tooltip="Your Goals - Opponent Goals"),
+                            DataColumn2(size=DataColumnSize.M, label=ft.Text("Goals"), tooltip="Goals Scored", numeric=True),
+                            DataColumn2(size=DataColumnSize.M, label=ft.Text("Assists"), tooltip="Assists", numeric=True),
+                        ],
+                        rows=self.row_list
+                    )
+                ]
+            )
+        )
+        
+
+
+#Full rundown on a match - All stats from the database.
+@ft.control
+class MatchDisplayTable_FULL(Container):
+    def __init__(self, page: ft.Page, data, number) -> None:
+        self.app_page = page
+        self.data = data
+        self.number = number
+        
+        def detail_row(label, value):
+                    return Row(
+                        controls=[
+                            Text(value=label, size=13, color=ft.Colors.GREY_600, width=110),
+                            Text(value=str(value) if value != "" else "-", size=13, weight=ft.FontWeight.W_500),
+                        ]
+                    )
+                
+        def section_header(title):
+            return Text(value=title, size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_800)
+
+        
+        super().__init__(
+            border=ft.Border.all(1, ft.Colors.GREY_300),
+            border_radius=ft.BorderRadius.all(10),
+            padding=ft.Padding.all(16),
+            bgcolor=ft.Colors.WHITE,
+            content=Column(
+                spacing=10,
+                controls=[
+                    Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[
+                            Text(value=f"Match #{self.number}", size=16, weight=ft.FontWeight.BOLD),
+                            Text(value=self.data["date"], size=13, color=ft.Colors.GREY_600),
+                        ]
+                    ),
+                    ft.Divider(),
+                    
+                    section_header("Match Data"),
+                    detail_row("Opponent", self.data["opponent_name"]),
+                    detail_row("Competition", self.data["competition"]),
+                    detail_row("Result", self.data["result"]),
+                    detail_row("Score", f'{self.data["your_goals"]}-{self.data["opponents_goals"]}'),
+                    ft.Divider(),
+                    
+                    section_header("Role"),
+                    detail_row("Position", self.data["position"]),
+                    detail_row("Role", self.data["role"]),
+                    detail_row("Minutes", self.data["minutes"]),
+                    ft.Divider(),
+                    
+                    section_header("Performance"),
+                    detail_row("Goals", self.data["goals"]),
+                    detail_row("Assists", self.data["assists"]),
+                    detail_row("Confidence", f'{self.data["confidence"]}/10'),
+                    ft.Divider(),
+                    
+                    section_header("Discipline"),
+                    detail_row("Yellow Cards", self.data["yellow_cards"]),
+                    detail_row("Red Cards", self.data["red_cards"]),
+                    ft.Divider(),
+                    
+                    section_header("Notes"),
+                    Text(value=self.data["notes"] if self.data["notes"] else "No notes recorded.", size=13),
+                ]
+            )
+        )
+
+#Replica of MatchDisplayTable_FULL, but specifically for FULL season stat display
+@ft.control
+class SeasonStatsDisplayTable(Container):
+    def __init__(self, page: ft.Page, data) -> None:
+        self.app_page = page
+        self.data = data
+        
+        def detail_row(label, value):
+                    return Row(
+                        controls=[
+                            Text(value=label, size=13, color=ft.Colors.GREY_600, width=110),
+                            Text(value=str(value) if value != "" else "-", size=13, weight=ft.FontWeight.W_500),
+                        ]
+                    )
+                
+        def section_header(title):
+            return Text(value=title, size=14, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_800)
+
+        
+        super().__init__(
+            border=ft.Border.all(1, ft.Colors.GREY_300),
+            border_radius=ft.BorderRadius.all(10),
+            padding=ft.Padding.all(16),
+            bgcolor=ft.Colors.WHITE,
+            content=Column(
+                spacing=10,
+                controls=[
+                    Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[
+                            Text(value=f"Season Stats", size=16, weight=ft.FontWeight.BOLD),
+                        ]
+                    ),
+                    ft.Divider(),
+                    
+                    section_header("Season Overview"),
+                    detail_row("Total Matches", self.data["total_matches"]),
+                    detail_row("Wins", self.data["wins"]),
+                    detail_row("Draws", self.data["draws"]),
+                    detail_row("Losses", self.data["losses"]),
+                    detail_row("Win Percentage", f'{self.data["win_percentage"]:.1f}%'),
+                    ft.Divider(),
+
+                    section_header("Performance"),
+                    detail_row("Goals", self.data["total_goals"]),
+                    detail_row("Assists", self.data["total_assists"]),
+                    detail_row("Minutes Played", self.data["total_min_played"]),
+                    detail_row("Average Confidence", f'{self.data["average_confidence"]:.1f}/10'),
+                    ft.Divider(),
+
+                    section_header("Team Performance"),
+                    detail_row("Goals For", self.data["goals_for"]),
+                    detail_row("Goals Against", self.data["goals_against"]),
+                    detail_row("Goal Differential", f'{self.data["goal_differential"]:+d}'),
+                    ft.Divider(),
+
+                    section_header("Discipline"),
+                    detail_row("Yellow Cards", self.data["total_yellow_cards"]),
+                    detail_row("Red Cards", self.data["total_red_cards"]),
+                ]
+            )
+        )
+
 
 @ft.control
 class StatRow(Container):
@@ -135,169 +340,301 @@ class StatRow(Container):
         )
 
 
-#Universal Controls (Text, Number, Dropdown, Float) -------------
-@ft.control
-class UniversalTextInputField(ft.TextField):
-    def __init__(self, page: ft.Page, label) -> None:
-        self.app_page = page  
-        
-        super().__init__(
-            label=label,
-        )
 
-@ft.control
-class UniversalNumberInputField(ft.TextField):
-    def __init__(self, page: ft.Page, label, lower_bound, upper_bound) -> None:
-        self.app_page = page  
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
+#PAGES ----------------------------------------------
+
+class Delete_Match_Page():
+    def __init__(self, page, state, nav_menu) -> None:
+        self.app_page = page
+        self.state = state
+        self.nav_menu = nav_menu
+        self.seleted_match = ''
         
-        super().__init__(
-            label=label,
-            keyboard_type=ft.KeyboardType.NUMBER,
-            input_filter= ft.NumbersOnlyInputFilter(),
-            on_blur = self.limit_inputs
-        )
+        self.all_matches = self.state.all_matches
         
-    def limit_inputs(self, e):
-        if e.control.value != "":
-            value = int(e.control.value)
-            
-            if self.lower_bound <= value <= self.upper_bound:
-                pass
-            else:
-                e.control.value = ""
-        
-            
-@ft.control
-class UniversalFloatInputField(ft.TextField):
-    def __init__(self, page: ft.Page, label, lower_bound, upper_bound) -> None:
-        self.app_page = page  
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-        super().__init__(
-            label=label,
-            keyboard_type=ft.KeyboardType.NUMBER,
-            input_filter= ft.InputFilter(
-                allow=True,
-                regex_string=r"^\d*\.?\d*$",
-                replacement_string=""
-            ),
-            on_blur = self.limit_inputs
+        self.selection_table = Column(
+            controls=[
+                MatchDisplayTable_SMALL(
+                    page=self.app_page,
+                    state=self.state,
+                    data=self.all_matches, 
+                    nav_menu=self.nav_menu, 
+                    on_tap_function=self.selection_table_on_tap
+                )
+            ]
         )
         
-    def limit_inputs(self, e):
-        if e.control.value != "":
-            value = float(e.control.value)
-            if self.lower_bound <= value <= self.upper_bound:
-                pass
-            else:
-                e.control.value = ""
-      
-@ft.control  
-class UniversalDropdownInput(ft.Dropdown):
-    def __init__(self, page: ft.Page, label,option_values) -> None:
-        self.app_page = page  
-        self.option_list = []
-        self.option_values = option_values
-        
-        for option in self.option_values:
-            self.option_list.append(ft.DropdownOption(key=option.lower(), text=option.title()))
-            
-        
-        super().__init__(
-            label=label,
-            options= self.option_list
+        self.confirmation_message = Container(
+            visible=False,
+            width=350,
+            padding=ft.Padding.all(15),
+            border_radius=ft.BorderRadius.all(8),
+            bgcolor=ft.Colors.RED_50,
+            border=ft.Border.all(1, ft.Colors.RED_200),
         )
-
-
-@ft.control  
-class UniversalDateInput(ft.Container):
-    def __init__(self, page: ft.Page) -> None:
-        self.app_page = page  
         
-        self.today = datetime.datetime.today()
-        self.selected_date = datetime.datetime.today().strftime('%m/%d/%Y')
-        self.date_selected_text = ft.Text(value="", size=15)
-
         
-        self.date_picker = ft.DatePicker(
-            last_date=self.today,
-            current_date=self.today,
-            on_change=self.date_picked,
-        )
-
-        
-        super().__init__(
-            width=300,
-            height=50,
-            padding=ft.Padding.all(8),
-            border_radius=ft.BorderRadius.all(4),
-            border=ft.Border.all(1, ft.Colors.BLACK),
-            content=ft.Row(
-                alignment=ft.MainAxisAlignment.CENTER,
-                controls=[
-                    self.date_selected_text,
-                    ft.Button(
-                        width=140,
-                        icon=ft.Icons.CALENDAR_MONTH, 
-                        content="Pick Date", 
-                        on_click=lambda _: self.app_page.show_dialog(self.date_picker)
+        self.view = ft.View(
+            drawer=self.nav_menu,
+            padding= ft.Padding(0,0,0,15),
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[
+                UniversalAppBar(self.app_page),
+                Container(
+                    padding=ft.Padding.symmetric(horizontal=5),
+                    content=Column(
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        controls = [
+                            Row(
+                                controls=[
+                                    Text(value="Delete Match", size=20)
+                                ], 
+                                alignment=ft.MainAxisAlignment.CENTER
+                            ),
+                            ft.Divider(),
+                            self.selection_table,
+                            self.confirmation_message
+                        ]
                     )
-                ]
-            )
-        )
+                ),
+            ]
+        )     
+        
+    def selection_table_on_tap(self,e, num):
+        self.seleted_match = num
+        
+        controls = Column(
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=10,
+            controls=[
+                Row(
+                    controls=[
+                        ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=ft.Colors.RED_700, size=20),
+                        Text(
+                            value=f'Delete Game #{self.seleted_match}? This cannot be undone.',
+                            size=13,
+                            color=ft.Colors.RED_900,
+                        ),
+                    ]
+                ),
+                Row(
+                    alignment=ft.MainAxisAlignment.END,
+                    controls=[
+                        ft.Button(width = 100,content="Cancel", on_click=self.disable_delete),
+                        ft.Button(
+                            width = 100,
+                            content="Delete",
+                            on_click=self.delete_match,
+                            bgcolor=ft.Colors.RED_600,
+                            color=ft.Colors.WHITE,
+                        ),
+                    ]
+                ),
+            ]
+        )      
+
+        self.confirmation_message.visible = True
+        self.confirmation_message.content = controls
+        self.app_page.update()
     
-    def date_picked(self, e):
-        self.selected_date = e.control.value.strftime('%m/%d/%Y')
-        self.date_selected_text.value = f'{self.selected_date}'
+    def disable_delete(self, e = None):
+        self.confirmation_message.visible = False
+        self.confirmation_message.content = None
+        self.app_page.update()
+        self.seleted_match = ''
+        
+        
+        
+    async def delete_match(self, e = None):
+        route = self.app_page.route
+        self.state.delete_match(self.seleted_match)
+        self.seleted_match = ''
+        self.disable_delete()
+        
+        #Ok so this looks janky icl, but best i couldve done for a actual reset. And i mean it works.
+        await self.app_page.push_route('')
+        await self.app_page.push_route(route)
+            
 
+#Shows season summary with simmilar style to all_matches / specific_match pages.
+#No input/user stuff, just the data shown. no input really needed for this tbh idk how u would have it
+class Season_Summary_Page():
+    def __init__(self, page, state, nav_menu) -> None:
+        self.app_page = page
+        self.state = state
+        self.nav_menu = nav_menu
 
+        self.view = ft.View(
+            drawer=self.nav_menu,
+            padding= ft.Padding(0,0,0,10),
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[
+                UniversalAppBar(self.app_page),
+                Container(
+                    padding=ft.Padding.symmetric(horizontal=5),
+                    content=Column(
+                        controls = [
+                            SeasonStatsDisplayTable(page=self.app_page,data=self.state.all_matches_summary)
+                        ]
+                    )
+                )
+            ]
+        )     
+    
+#Page for displaying all matches. Simpler data compared to specific match page.
+class All_Matches_Page():
+    def __init__(self, page, state, nav_menu) -> None:
+        self.app_page = page
+        self.state = state
+        self.nav_menu = nav_menu
+        
+        self.all_matches = self.state.all_matches
+        
+        self.view = ft.View(
+            drawer=self.nav_menu,
+            padding= ft.Padding.all(0),
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[
+                UniversalAppBar(self.app_page),
+                Container(
+                    padding=ft.Padding.symmetric(horizontal=5),
+                    content=Column(
+                        controls = [
+                            Row(
+                                controls=[
+                                    Text(value="All Matches", size=20)
+                                ], 
+                                alignment=ft.MainAxisAlignment.CENTER
+                            ),
+                            ft.Row(
+                                alignment=ft.MainAxisAlignment.CENTER,
+                                controls=[
+                                    ft.Icon(ft.Icons.INFO_OUTLINE, size=14, color=ft.Colors.GREY_600),
+                                    Text("For full match details, click on the game data row.", size=11, color=ft.Colors.GREY_600),
+                                ]
+                            ),
+                            ft.Divider(),
+                            Column(
+                                scroll=ft.ScrollMode.ALWAYS,
+                                alignment=ft.MainAxisAlignment.CENTER,
+                                controls=[MatchDisplayTable_SMALL(page=self.app_page,state=self.state,data=self.all_matches,nav_menu=self.nav_menu, on_tap_function= self.navigate_to_full_data)],
+                            ),
+                            Row(
+                                controls=[
+                                    ft.Icon(ft.Icons.SWIPE, size=17, color=ft.Colors.GREY_500),
+                                    ft.Text("Scroll for more", size=14, color=ft.Colors.GREY_500),
+                                ], 
+                                alignment=ft.MainAxisAlignment.CENTER
+                            ),
+                        ]
+                    )
+                ),
+            ]
+        )  
+        
+    async def navigate_to_full_data(self,e, num):
+        self.nav_menu.selected_index = 3
+        self.state.all_match_selected_match_id = int(num)
+        await self.app_page.push_route('/specific_match')
 
-class Add_Match():
+#Page for displaying all matches. Simpler data compared to specific match page.
+class Specific_Match_Page():
+    def __init__(self, page, state, nav_menu) -> None:
+        self.app_page = page
+        self.state = state
+        self.nav_menu = nav_menu
+        
+        self.all_matches = self.state.all_matches
+        
+        self.match_number_input = UniversalNumberInputField(
+                        page=self.app_page, 
+                        label="Match Number", 
+                        lower_bound=1, 
+                        upper_bound=len(self.all_matches),
+                    )
+                    
+                    
+        self.match_data_contianer = Container(
+            disabled=True,
+        )
+
+        self.view = ft.View(
+                        drawer=self.nav_menu,
+                        padding= ft.Padding.all(0),
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        scroll=ft.ScrollMode.AUTO,
+                        controls=[
+                            UniversalAppBar(self.app_page),
+                            Container(
+                                padding=ft.Padding.symmetric(horizontal=5),
+                                content=Column(
+                                    controls = [
+                                        Row(
+                                            controls=[
+                                                Text(value="Specific Match Data", size=20)
+                                            ], 
+                                            alignment=ft.MainAxisAlignment.CENTER
+                                        ),
+                                        ft.Divider(),
+                                        Row(
+                                            controls=[
+                                                self.match_number_input,
+                                                ft.Button(
+                                                    content="ok",
+                                                    on_click= self.on_click
+                                                )
+                                            ]
+                                        ),
+                                        
+                                        self.match_data_contianer,
+                                        
+                                    ]
+                                )
+                            ),
+                        ]
+                    )     
+        
+        if isinstance(self.state.all_match_selected_match_id, int):
+            id = int(self.state.all_match_selected_match_id)
+            specific_match_data = self.all_matches[id]
+            self.state.all_match_selected_match_id = ''
+            self.match_number_input.value = str(id)
+            self.match_data_contianer.content = MatchDisplayTable_FULL(page=self.app_page, data=specific_match_data, number = id)
+
+    
+    def on_click(self, e):
+        value = self.match_number_input.value
+        
+        if value != "":
+            specific_match_data = self.all_matches[int(value)]
+            self.match_data_contianer.disabled = False
+            self.match_data_contianer.content = MatchDisplayTable_FULL(page=self.app_page, data=specific_match_data, number = value)
+        
+        self.app_page.update()
+
+#Add Match Page
+class Add_Match_Page():
     def __init__(self, page, state, nav_menu) -> None:
         self.app_page = page
         self.state = state
         self.nav_menu = nav_menu
         
         self.error_column = Column(
-            disabled=True,
+            visible=False,
             controls=[],
         )
         
         self.error_container = Container(
-            disabled=True,
+            visible=False,
             width = 275,
             content=self.error_column,
             border_radius=ft.BorderRadius.all(5),
             padding=ft.Padding.all(15)
         )
         
-        self.positions = [
-            "Goalkeeper",
-            "Center Back",
-            "Left Back",
-            "Right Back",
-            "Fullback",
-            "Left Wing Back",
-            "Right Wing Back",
-            "Wing Back",
-            "Defensive Midfielder",
-            "Central Midfielder",
-            "Attacking Midfielder",
-            "Left Midfielder",
-            "Right Midfielder",
-            "Left Wing",
-            "Right Wing",
-            "Winger",
-            "Center Forward",
-            "Striker",
-            "Second Striker",
-            "Sweeper",
-            "Bench",
-            "Multiple Positions",
-        ]
-                
         
         self.input_controls = {
             #Ts is very unoptiomized i think 
@@ -325,7 +662,7 @@ class Add_Match():
             #TODO: If you ever wanna add sum, add a checkbox here with the label "Went to Extra Time?"
             "minutes_played": UniversalNumberInputField(page=self.app_page,label="Minutes",lower_bound=0,upper_bound=120),
             # TODO: swap position field to UniversalAutoCompleteInput once label + focus-border are sorted
-            "position":  UniversalDropdownInput(page=self.app_page, label="Position", option_values=self.positions),
+            "position":  UniversalDropdownInput(page=self.app_page, label="Position", option_values=gui_positions),
             "divider3": ft.Divider(),
             
             #Player Match Stats ----------
@@ -383,8 +720,8 @@ class Add_Match():
         result, returned_value = self.state.save_data(data)
         
         if result:
-            self.error_container.disabled = False
-            self.error_column.disabled = False
+            self.error_container.visible = True
+            self.error_column.visible = True
             self.error_container.bgcolor = ft.Colors.GREEN_100
             self.error_column.controls = [Text("Success! Game added to database.")]
             
@@ -404,16 +741,16 @@ class Add_Match():
         
         else:
             unique_returned_values = set(returned_value.values())
-            self.error_container.disabled = False
-            self.error_column.disabled = False
+            self.error_container.visible = True
+            self.error_column.visible = True
             self.error_container.bgcolor = ft.Colors.RED_100
             self.error_column.controls = [Text("Errors:")]
             for index,value in enumerate(unique_returned_values,1):
                 self.error_column.controls.append(Text(f'{index}. {value}'))
                 
-            self.app_page.update()
-                  
+            self.app_page.update()        
 
+#Homepage, i mean what else bro
 class HomePage():
     def __init__(self, page, state, nav_menu) -> None:
         self.app_page = page
@@ -436,6 +773,7 @@ class HomePage():
             ]
         )
 
+#Error page, kinda obvious
 class Error404_NotFound_Page():
     def __init__(self, page, state, nav_menu) -> None:
         self.app_page = page
@@ -448,22 +786,32 @@ class Error404_NotFound_Page():
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
                 UniversalAppBar(self.app_page),
-                Text(value="How the fuck did your ass get here lmao")
+                Text(value="Error 404: Page Not Found")
             ]
         )
+
+
+
+#APP STATE/ APP / ROUTER ----------------------------
+
 
 #Main soure of app data
 #basically links the database/backend to the frontend/gui
 class AppState:
     #Anything can update this, since it passes into every view
     def __init__(self):
+        self.all_match_selected_match_id = ''
+        self.all_matches = {}
         self.all_matches_summary = {}
 
     def refresh(self):
         all_matches = load_all_matches()
-        data = show_summary(all_matches=all_matches)
         
-        self.all_matches_summary = data
+        usable_all_matches_data = display_all_matches(all_matches=all_matches)
+        summery_data = show_summary(all_matches=all_matches)
+        
+        self.all_matches_summary = summery_data
+        self.all_matches = usable_all_matches_data
     
     def save_data(self,data_dict):
         #Validate Data
@@ -493,8 +841,11 @@ class AppState:
             
         save_match(match)
         return True, None
-            
     
+    def delete_match(self, match_number):
+        delete_match(match_number)
+     
+#Different pages routing connector
 class Router():
     @staticmethod
     def get_views(route, general_controls):
@@ -502,10 +853,21 @@ class Router():
             case '/home':
                 return HomePage(*general_controls).view
             case '/add':
-                return Add_Match(*general_controls).view    
+                return Add_Match_Page(*general_controls).view  
+            case '/all_matches':
+                return  All_Matches_Page(*general_controls).view
+            case '/specific_match':
+                return  Specific_Match_Page(*general_controls).view
+            case '/summary':
+                return  Season_Summary_Page(*general_controls).view
+            
+            
+            case '/delete':
+                return  Delete_Match_Page(*general_controls).view
             case _:
                 return Error404_NotFound_Page(*general_controls).view
 
+#Main app class, honestly not that important feature-wise
 class App():
     def __init__(self,page,state) -> None:
         self.page :ft.Page = page
@@ -523,6 +885,10 @@ class App():
         new_view = Router.get_views(self.page.route, self.general_controls)
         self.page.views.append(new_view)
         self.page.update()
+
+
+
+#RUN PROGRAM / INIT --------------------
 
 
 #Initalize the app and hand it off the App() class

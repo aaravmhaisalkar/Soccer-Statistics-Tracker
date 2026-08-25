@@ -2,36 +2,31 @@ def display_all_matches(all_matches):
     if not all_matches:
         print("No data on previous games.")
         return
-    i = 1
-    for match in all_matches:
-        print(f"""
--------------------------
-Game {i}
--------------------------
+    
+    matches_dict = {}
+    
+    for i, match in enumerate(all_matches, 1):
+        matches_dict[i] = {
+            "opponent_name": match['opponent_name'],
+            "date": match['date'],
+            "competition": match['competition'],
+            "result": match['result'],
+            "your_goals": match['your_goals'],
+            "opponents_goals": match['opponents_goals'],
+            "position": match['position'],
+            "role": match['role'],
+            "goals": match['goals'],
+            "assists": match['assists'],
+            "minutes": match['minutes'],
+            "confidence": match['confidence'],
+            "yellow_cards": match['yellow_cards'],
+            "red_cards": match['red_cards'],
+            "notes": match['notes'],
+        }
+    
+    return matches_dict
+    
 
-Opponent: {match['opponent_name']}
-Date: {match['date']}
-Competition: {match['competition']}
-Result: {match['your_goals']}-{match['opponents_goals']} ({match['result']})
-
-Position: {match['position']}
-Role: {match['role']}
-
-Performance:
-Goals: {match['goals']}
-Assists: {match['assists']}
-Minutes Played: {match['minutes']}
-Confidence: {match['confidence']}/10
-
-Discipline:
-Yellow Cards: {match['yellow_cards']}
-Red Cards: {match['red_cards']}
-
-Notes:
-{match['notes']}
--------------------------\n
-        """)
-        i += 1
     
     
 def display_specific_match(all_matches, number):
