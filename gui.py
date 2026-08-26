@@ -21,8 +21,6 @@ from flet import Row, Column, Container, Text, VerticalDivider
 
 infinite_int = 10**18
 
-#GIANT ERROR TODO TODO TODO: fkn everything falls apart when no data is there in self.state.all_matches
-#Add somthing where if no data then it js like does some "No data found" shi
 #RUN on iOS = flet run gui.py --ios --name SoccerStatisticsTracker
 
 
@@ -354,64 +352,66 @@ class Delete_Match_Page():
         self.state = state
         self.nav_menu = nav_menu
         self.seleted_match = ''
-        
+
         self.all_matches = self.state.all_matches
-        
-        
-        self.selection_table = Column(
-            controls=[
-                MatchDisplayTable_SMALL(
-                    page=self.app_page,
-                    state=self.state,
-                    data=self.all_matches, 
-                    nav_menu=self.nav_menu, 
-                    on_tap_function=self.selection_table_on_tap
-                )
-            ]
-        )
-        
-        self.confirmation_message = Container(
-            visible=False,
-            alignment=ft.Alignment.CENTER,
-            width=350,
-            padding=ft.Padding.all(15),
-            border_radius=ft.BorderRadius.all(8),
-            bgcolor=ft.Colors.RED_50,
-            border=ft.Border.all(1, ft.Colors.RED_200),
-        )
-        
-        
+
         self.view = ft.View(
             drawer=self.nav_menu,
-            padding= ft.Padding(0,0,0,15),
+            padding=ft.Padding(0, 0, 0, 15),
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             scroll=ft.ScrollMode.AUTO,
             controls=[
                 UniversalAppBar(self.app_page),
+                Row(
+                    controls=[Text(value="Delete Match", size=20)],
+                    alignment=ft.MainAxisAlignment.CENTER
+                ),
+                ft.Divider(),
+            ]
+        )
+
+        errors = self.state.build_status_message()
+
+        if errors != None:
+            self.view.controls.append(errors)
+
+        else:
+            self.selection_table = Column(
+                controls=[
+                    MatchDisplayTable_SMALL(
+                        page=self.app_page,
+                        state=self.state,
+                        data=self.all_matches,
+                        nav_menu=self.nav_menu,
+                        on_tap_function=self.selection_table_on_tap
+                    )
+                ]
+            )
+
+            self.confirmation_message = Container(
+                visible=False,
+                alignment=ft.Alignment.CENTER,
+                width=350,
+                padding=ft.Padding.all(15),
+                border_radius=ft.BorderRadius.all(8),
+                bgcolor=ft.Colors.RED_50,
+                border=ft.Border.all(1, ft.Colors.RED_200),
+            )
+
+            self.view.controls.extend([
                 Container(
                     alignment=ft.Alignment.CENTER,
                     padding=ft.Padding.symmetric(horizontal=5),
                     content=Column(
                         alignment=ft.MainAxisAlignment.CENTER,
-                        controls = [
-                            Row(
-                                controls=[
-                                    Text(value="Delete Match", size=20)
-                                ], 
-                                alignment=ft.MainAxisAlignment.CENTER
-                            ),
-                            ft.Divider(),
-                            self.selection_table,
-                            self.confirmation_message
-                        ]
+                        controls=[self.selection_table, self.confirmation_message]
                     )
                 ),
-            ]
-        )     
-        
-    def selection_table_on_tap(self,e, num):
+            ])
+
+    def selection_table_on_tap(self, e, num):
         self.seleted_match = num
-        
+
         controls = Column(
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=10,
@@ -429,9 +429,9 @@ class Delete_Match_Page():
                 Row(
                     alignment=ft.MainAxisAlignment.END,
                     controls=[
-                        ft.Button(width = 100,content="Cancel", on_click=self.disable_delete),
+                        ft.Button(width=100, content="Cancel", on_click=self.disable_delete),
                         ft.Button(
-                            width = 100,
+                            width=100,
                             content="Delete",
                             on_click=self.delete_match,
                             bgcolor=ft.Colors.RED_600,
@@ -440,49 +440,40 @@ class Delete_Match_Page():
                     ]
                 ),
             ]
-        )      
+        )
 
         self.confirmation_message.visible = True
         self.confirmation_message.content = controls
         self.app_page.update()
-    
-    def disable_delete(self, e = None):
+
+    def disable_delete(self, e=None):
         self.confirmation_message.visible = False
         self.confirmation_message.content = None
         self.app_page.update()
         self.seleted_match = ''
-             
-        
-    async def delete_match(self, e = None):
+
+    async def delete_match(self, e=None):
         route = self.app_page.route
         result, error = self.state.delete_match(self.seleted_match)
-        
+
         if result:
             self.seleted_match = ''
             self.disable_delete()
-            
             #Ok so this looks janky icl, but best i couldve done for a actual reset. And i mean it works.
             await self.app_page.push_route('')
             await self.app_page.push_route(route)
-                
-        
         else:
             self.confirmation_message.content = Column(
                 controls=[
                     Row(
                         controls=[
                             Text(f'Error: {error}'),
-                            ft.Button(
-                                content="Close",
-                                on_click=self.disable_delete
-                            )
+                            ft.Button(content="Close", on_click=self.disable_delete)
                         ]
                     )
                 ]
             )
-                
             self.app_page.update()
-            
 
 #Shows season summary with simmilar style to all_matches / specific_match pages.
 #No input/user stuff, just the data shown. no input really needed for this tbh idk how u would have it
@@ -494,22 +485,36 @@ class Season_Summary_Page():
 
         self.view = ft.View(
             drawer=self.nav_menu,
-            padding= ft.Padding(0,0,0,10),
+            padding=ft.Padding(0, 0, 0, 10),
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             scroll=ft.ScrollMode.AUTO,
             controls=[
                 UniversalAppBar(self.app_page),
+                Row(
+                    controls=[Text(value="Season Stats Summary", size=20)],
+                    alignment=ft.MainAxisAlignment.CENTER
+                ),
+                ft.Divider(),
+            ]
+        )
+
+        errors = self.state.build_status_message()
+
+        if errors != None:
+            self.view.controls.append(errors)
+
+        else:
+            self.view.controls.append(
                 Container(
                     padding=ft.Padding.symmetric(horizontal=5),
                     content=Column(
-                        controls = [
-                            SeasonStatsDisplayTable(page=self.app_page,data=self.state.all_matches_summary)
+                        controls=[
+                            SeasonStatsDisplayTable(page=self.app_page, data=self.state.all_matches_summary)
                         ]
                     )
                 )
-            ]
-        )     
-    
+            )
+
 #Page for displaying all matches. Simpler data compared to specific match page.
 class All_Matches_Page():
     def __init__(self, page, state, nav_menu) -> None:
@@ -596,73 +601,73 @@ class Specific_Match_Page():
         self.app_page = page
         self.state = state
         self.nav_menu = nav_menu
-        
+
         self.all_matches = self.state.all_matches
-        
-        self.match_number_input = UniversalNumberInputField(
-                        page=self.app_page, 
-                        label="Match Number", 
-                        lower_bound=1, 
-                        upper_bound=len(self.all_matches),
-                    )
-                    
-                    
-        self.match_data_contianer = Container(
-            disabled=True,
-        )
 
         self.view = ft.View(
-                        drawer=self.nav_menu,
-                        padding= ft.Padding.all(0),
-                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                        scroll=ft.ScrollMode.AUTO,
-                        controls=[
-                            UniversalAppBar(self.app_page),
-                            Container(
-                                padding=ft.Padding.symmetric(horizontal=5),
-                                content=Column(
-                                    controls = [
-                                        Row(
-                                            controls=[
-                                                Text(value="Specific Match Data", size=20)
-                                            ], 
-                                            alignment=ft.MainAxisAlignment.CENTER
-                                        ),
-                                        ft.Divider(),
-                                        Row(
-                                            controls=[
-                                                self.match_number_input,
-                                                ft.Button(
-                                                    content="ok",
-                                                    on_click= self.on_click
-                                                )
-                                            ]
-                                        ),
-                                        
-                                        self.match_data_contianer,
-                                        
-                                    ]
-                                )
-                            ),
-                        ]
-                    )     
-        
-        if isinstance(self.state.all_match_selected_match_id, int):
-            id = int(self.state.all_match_selected_match_id)
-            specific_match_data = self.all_matches[id]
-            self.state.all_match_selected_match_id = ''
-            self.match_number_input.value = str(id)
-            self.match_data_contianer.content = MatchDisplayTable_FULL(page=self.app_page, data=specific_match_data, number = id)
+            drawer=self.nav_menu,
+            padding=ft.Padding.all(0),
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[
+                UniversalAppBar(self.app_page),
+                Row(
+                    controls=[Text(value="Specific Match Data", size=20)],
+                    alignment=ft.MainAxisAlignment.CENTER
+                ),
+                ft.Divider(),
+            ]
+        )
 
-    
+        errors = self.state.build_status_message()
+
+        if errors != None:
+            self.view.controls.append(errors)
+
+        else:
+            self.match_number_input = UniversalNumberInputField(
+                page=self.app_page,
+                label="Match Number",
+                lower_bound=1,
+                upper_bound=len(self.all_matches),
+            )
+
+            self.match_data_contianer = Container(
+                disabled=True,
+            )
+
+            self.view.controls.append(
+                Container(
+                    padding=ft.Padding.symmetric(horizontal=5),
+                    content=Column(
+                        controls=[
+                            Row(
+                                controls=[
+                                    self.match_number_input,
+                                    ft.Button(content="ok", on_click=self.on_click)
+                                ]
+                            ),
+                            self.match_data_contianer,
+                        ]
+                    )
+                )
+            )
+
+            if isinstance(self.state.all_match_selected_match_id, int):
+                id = int(self.state.all_match_selected_match_id)
+                specific_match_data = self.all_matches[id]
+                self.state.all_match_selected_match_id = ''
+                self.match_number_input.value = str(id)
+                self.match_data_contianer.content = MatchDisplayTable_FULL(page=self.app_page, data=specific_match_data, number=id)
+
     def on_click(self, e):
         value = self.match_number_input.value
-        
-        if value != "":
+
+        if value != "" and int(value) <= int(len(self.all_matches)):
             specific_match_data = self.all_matches[int(value)]
             self.match_data_contianer.disabled = False
-            self.match_data_contianer.content = MatchDisplayTable_FULL(page=self.app_page, data=specific_match_data, number = value)
-        
+            self.match_data_contianer.content = MatchDisplayTable_FULL(page=self.app_page, data=specific_match_data, number=value)
+
         self.app_page.update()
 
 #Add Match Page
@@ -745,6 +750,11 @@ class Add_Match_Page():
             scroll=ft.ScrollMode.AUTO,
             controls=[
                 UniversalAppBar(self.app_page),
+                Row(
+                    controls=[Text(value="Add Match", size=20)],
+                    alignment=ft.MainAxisAlignment.CENTER
+                ),
+                ft.Divider(),
                 *self.input_controls.values(),
                 self.error_container,
                 ft.Button(
@@ -812,6 +822,11 @@ class HomePage():
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     controls=[
                         UniversalAppBar(self.app_page),
+                        Row(
+                            controls=[Text(value="Homepage", size=20)],
+                            alignment=ft.MainAxisAlignment.CENTER
+                        ),
+                        ft.Divider(),
                     ]
                 )
         
