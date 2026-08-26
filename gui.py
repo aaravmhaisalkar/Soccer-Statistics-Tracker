@@ -21,6 +21,8 @@ from flet import Row, Column, Container, Text, VerticalDivider
 
 infinite_int = 10**18
 
+#GIANT ERROR TODO TODO TODO: fkn everything falls apart when no data is there in self.state.all_matches
+#Add somthing where if no data then it js like does some "No data found" shi
 
 #Custom Unique Controls (Appbar, Navigation Drawer, Stat Containers) --------
 @ft.control
@@ -185,6 +187,7 @@ class MatchDisplayTable_FULL(Container):
         self.app_page = page
         self.data = data
         self.number = number
+        
         
         def detail_row(label, value):
                     return Row(
@@ -352,6 +355,7 @@ class Delete_Match_Page():
         
         self.all_matches = self.state.all_matches
         
+        
         self.selection_table = Column(
             controls=[
                 MatchDisplayTable_SMALL(
@@ -366,6 +370,7 @@ class Delete_Match_Page():
         
         self.confirmation_message = Container(
             visible=False,
+            alignment=ft.Alignment.CENTER,
             width=350,
             padding=ft.Padding.all(15),
             border_radius=ft.BorderRadius.all(8),
@@ -382,6 +387,7 @@ class Delete_Match_Page():
             controls=[
                 UniversalAppBar(self.app_page),
                 Container(
+                    alignment=ft.Alignment.CENTER,
                     padding=ft.Padding.symmetric(horizontal=5),
                     content=Column(
                         alignment=ft.MainAxisAlignment.CENTER,
@@ -835,7 +841,7 @@ class AppState:
         
         #Send Data to Database
         if not validation_result:
-            errors["match"] = value
+            errors["match"] = returned_value
             print(errors)
             return False, errors
             

@@ -25,7 +25,7 @@ def general_input_check(key, value):
             return False, f"Error with {current_data_rule['display_string']} value"
     
     elif current_data_rule['type'] == "name":
-        cleaned_value = str(value).lower().strip()
+        cleaned_value = str(value).strip()
         if len(cleaned_value) < 1:
             return False, f"Error with {current_data_rule['display_string']}. Too short / No Value."
         else:
