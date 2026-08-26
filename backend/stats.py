@@ -1,4 +1,8 @@
 def show_summary(all_matches):
+    
+    if not all_matches:
+        return False, "empty"
+    
     total_matches = len(all_matches)
     total_goals = 0
     total_min_played = 0
@@ -12,34 +16,29 @@ def show_summary(all_matches):
     goals_for = 0
     goals_against= 0
     
-    if total_matches > 0:
-        for stats in all_matches:
-            total_goals += stats['goals']
-            total_assists += stats['assists']
-            total_confidence += stats['confidence']
-            total_yellow_cards += stats['yellow_cards']
-            total_red_cards += stats['red_cards']
-            total_min_played += stats['minutes']
-            goals_for += stats['your_goals']
-            goals_against += stats['opponents_goals']
+
+    for stats in all_matches:
+        total_goals += stats['goals']
+        total_assists += stats['assists']
+        total_confidence += stats['confidence']
+        total_yellow_cards += stats['yellow_cards']
+        total_red_cards += stats['red_cards']
+        total_min_played += stats['minutes']
+        goals_for += stats['your_goals']
+        goals_against += stats['opponents_goals']
+        
+        if stats['result'].lower() == "win":
+            wins += 1
+        elif stats['result'].lower() == 'loss':
+            losses += 1
+        elif stats['result'].lower() == 'draw': 
+            draws += 1
             
-            if stats['result'].lower() == "win":
-                wins += 1
-            elif stats['result'].lower() == 'loss':
-                losses += 1
-            elif stats['result'].lower() == 'draw': 
-                draws += 1
-                
-        average_confidence = total_confidence / total_matches
-        win_percentage = (wins/total_matches)*100
-        goal_differential = goals_for - goals_against
+    average_confidence = total_confidence / total_matches
+    win_percentage = (wins/total_matches)*100
+    goal_differential = goals_for - goals_against
         
-    else:    
-        average_confidence = 0
-        win_percentage = 0
-        goal_differential = 0
-        
-    return {
+    return True, {
         "total_yellow_cards": total_yellow_cards,
         "total_red_cards": total_red_cards,
         "total_matches": total_matches,

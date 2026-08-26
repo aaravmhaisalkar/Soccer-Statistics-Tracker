@@ -23,6 +23,8 @@ infinite_int = 10**18
 
 #GIANT ERROR TODO TODO TODO: fkn everything falls apart when no data is there in self.state.all_matches
 #Add somthing where if no data then it js like does some "No data found" shi
+#RUN on iOS = flet run gui.py --ios --name SoccerStatisticsTracker
+
 
 #Custom Unique Controls (Appbar, Navigation Drawer, Stat Containers) --------
 @ft.control
@@ -449,18 +451,37 @@ class Delete_Match_Page():
         self.confirmation_message.content = None
         self.app_page.update()
         self.seleted_match = ''
-        
-        
+             
         
     async def delete_match(self, e = None):
         route = self.app_page.route
-        self.state.delete_match(self.seleted_match)
-        self.seleted_match = ''
-        self.disable_delete()
+        result, error = self.state.delete_match(self.seleted_match)
         
-        #Ok so this looks janky icl, but best i couldve done for a actual reset. And i mean it works.
-        await self.app_page.push_route('')
-        await self.app_page.push_route(route)
+        if result:
+            self.seleted_match = ''
+            self.disable_delete()
+            
+            #Ok so this looks janky icl, but best i couldve done for a actual reset. And i mean it works.
+            await self.app_page.push_route('')
+            await self.app_page.push_route(route)
+                
+        
+        else:
+            self.confirmation_message.content = Column(
+                controls=[
+                    Row(
+                        controls=[
+                            Text(f'Error: {error}'),
+                            ft.Button(
+                                content="Close",
+                                on_click=self.disable_delete
+                            )
+                        ]
+                    )
+                ]
+            )
+                
+            self.app_page.update()
             
 
 #Shows season summary with simmilar style to all_matches / specific_match pages.
@@ -496,50 +517,73 @@ class All_Matches_Page():
         self.state = state
         self.nav_menu = nav_menu
         
+        self.view = ft.View(
+                    drawer=self.nav_menu,
+                    padding= ft.Padding.all(0),
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    scroll=ft.ScrollMode.AUTO,
+                    controls=[
+                        UniversalAppBar(self.app_page),
+                        Container(
+                            padding=ft.Padding.symmetric(horizontal=5),
+                            content=Column(
+                                controls = [
+                                    Row(
+                                        controls=[
+                                            Text(value="All Matches", size=20)
+                                        ], 
+                                        alignment=ft.MainAxisAlignment.CENTER
+                                    ),
+                                    ft.Divider(),
+                                ]
+                            )
+                        ),
+                    ]
+                )  
+        
+        
         self.all_matches = self.state.all_matches
         
-        self.view = ft.View(
-            drawer=self.nav_menu,
-            padding= ft.Padding.all(0),
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            scroll=ft.ScrollMode.AUTO,
-            controls=[
-                UniversalAppBar(self.app_page),
-                Container(
-                    padding=ft.Padding.symmetric(horizontal=5),
-                    content=Column(
-                        controls = [
-                            Row(
-                                controls=[
-                                    Text(value="All Matches", size=20)
-                                ], 
-                                alignment=ft.MainAxisAlignment.CENTER
-                            ),
-                            ft.Row(
-                                alignment=ft.MainAxisAlignment.CENTER,
-                                controls=[
-                                    ft.Icon(ft.Icons.INFO_OUTLINE, size=14, color=ft.Colors.GREY_600),
-                                    Text("For full match details, click on the game data row.", size=11, color=ft.Colors.GREY_600),
-                                ]
-                            ),
-                            ft.Divider(),
-                            Column(
-                                scroll=ft.ScrollMode.ALWAYS,
-                                alignment=ft.MainAxisAlignment.CENTER,
-                                controls=[MatchDisplayTable_SMALL(page=self.app_page,state=self.state,data=self.all_matches,nav_menu=self.nav_menu, on_tap_function= self.navigate_to_full_data)],
-                            ),
-                            Row(
-                                controls=[
-                                    ft.Icon(ft.Icons.SWIPE, size=17, color=ft.Colors.GREY_500),
-                                    ft.Text("Scroll for more", size=14, color=ft.Colors.GREY_500),
-                                ], 
-                                alignment=ft.MainAxisAlignment.CENTER
-                            ),
-                        ]
-                    )
+        self.all_matches_datatable = MatchDisplayTable_SMALL(
+            page=self.app_page,
+            state=self.state,
+            data=self.all_matches,
+            nav_menu=self.nav_menu, 
+            on_tap_function= self.navigate_to_full_data
+        )
+        
+        errors = self.state.build_status_message()
+        
+        if errors != None:
+            self.view.controls.append(errors)
+            
+        else:
+            self.view.controls.extend([
+                ft.Row(
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    controls=[
+                        ft.Icon(ft.Icons.INFO_OUTLINE, size=14, color=ft.Colors.GREY_600),
+                        Text("For full match details, click on the game data row.", size=11, color=ft.Colors.GREY_600),
+                    ]
                 ),
-            ]
-        )  
+                ft.Divider(),
+                Column(
+                    scroll=ft.ScrollMode.ALWAYS,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    controls=[self.all_matches_datatable],
+                ),
+                Row(
+                    controls=[
+                        ft.Icon(ft.Icons.SWIPE, size=17, color=ft.Colors.GREY_500),
+                        ft.Text("Scroll for more", size=14, color=ft.Colors.GREY_500),
+                    ], 
+                    alignment=ft.MainAxisAlignment.CENTER
+                )
+            ])
+        
+        
+        
+        
         
     async def navigate_to_full_data(self,e, num):
         self.nav_menu.selected_index = 3
@@ -762,22 +806,30 @@ class HomePage():
         self.app_page = page
         self.state = state
         self.nav_menu = nav_menu
-        
-        data_dict = [
-            [self.state.all_matches_summary['wins'],'Wins'],
-            [self.state.all_matches_summary['draws'],'Draws'],
-            [self.state.all_matches_summary['losses'],'Losses']
-        ]
-        
         self.view = ft.View(
-            drawer=self.nav_menu,
-            padding= ft.Padding.all(0),
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                UniversalAppBar(self.app_page),
-                StatRow(self.app_page,data_dict)
+                    drawer=self.nav_menu,
+                    padding= ft.Padding.all(0),
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls=[
+                        UniversalAppBar(self.app_page),
+                    ]
+                )
+        
+        errors = self.state.build_status_message()
+                
+        if errors != None:
+            self.view.controls.append(errors)
+            
+        else:
+            data_dict = [
+                [self.state.all_matches_summary['wins'],'Wins'],
+                [self.state.all_matches_summary['draws'],'Draws'],
+                [self.state.all_matches_summary['losses'],'Losses']
             ]
-        )
+            
+            self.view.controls.append(StatRow(self.app_page,data_dict))
+        
+        
 
 #Error page, kinda obvious
 class Error404_NotFound_Page():
@@ -806,18 +858,34 @@ class Error404_NotFound_Page():
 class AppState:
     #Anything can update this, since it passes into every view
     def __init__(self):
+        #Good = good data, bad = error in data, empty = no data
+        self.data_status = "" 
         self.all_match_selected_match_id = ''
         self.all_matches = {}
         self.all_matches_summary = {}
 
     def refresh(self):
-        all_matches = load_all_matches()
+        all_matches_check, all_matches = load_all_matches()
         
-        usable_all_matches_data = display_all_matches(all_matches=all_matches)
-        summery_data = show_summary(all_matches=all_matches)
+        if not all_matches_check:
+            self.data_status = "bad"
+            all_matches = {}
+            return
+    
         
-        self.all_matches_summary = summery_data
-        self.all_matches = usable_all_matches_data
+        #We do this 'usable_all_matches' thing bc sqlite3 returns sqlite.Row objects not "good" data
+        useable_data_check, usable_all_matches_data = display_all_matches(all_matches=all_matches)
+        summery_check, summery_data = show_summary(all_matches=all_matches)
+        
+        if summery_check and useable_data_check:
+            self.data_status = "good"
+            self.all_matches_summary = summery_data
+            self.all_matches = usable_all_matches_data
+            return
+        
+        else:
+            self.data_status = "empty"
+            return
     
     def save_data(self,data_dict):
         #Validate Data
@@ -845,11 +913,29 @@ class AppState:
             print(errors)
             return False, errors
             
-        save_match(match)
+        result, error = save_match(match)
+        
+        if not result:
+            errors["database"] = error
+            return False, errors
+        
         return True, None
     
     def delete_match(self, match_number):
-        delete_match(match_number)
+        result, error = delete_match(match_number)
+        if result:
+            return True, None
+        else:
+            return False, error
+        
+    def build_status_message(self):
+        match self.data_status:
+            case "bad":
+                return Text("Something went wrong loading data.", color=ft.Colors.RED)
+            case "empty":
+                return Text("No matches yet — add your first one!")
+            case _:
+                return None
      
 #Different pages routing connector
 class Router():

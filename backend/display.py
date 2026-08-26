@@ -1,7 +1,6 @@
 def display_all_matches(all_matches):
     if not all_matches:
-        print("No data on previous games.")
-        return
+        return False, "empty"
     
     matches_dict = {}
     
@@ -24,7 +23,7 @@ def display_all_matches(all_matches):
             "notes": match['notes'],
         }
     
-    return matches_dict
+    return True, matches_dict
     
 
     

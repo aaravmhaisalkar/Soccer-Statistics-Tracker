@@ -67,8 +67,11 @@ def save_match(stats):
                     stats["notes"]
                 )
             )
+    
     except sqlite3.Error as e:
-        return f"Database error: {e}"
+            return False, f"Database error: {e}"
+    
+    return True, None
 
 def load_all_matches():
     try:
@@ -77,10 +80,10 @@ def load_all_matches():
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM matches ORDER BY id")
             rows = cursor.fetchall()
-            return rows
+            return True, rows
         
     except sqlite3.Error as e:
-        return f"Database error: {e}"
+        return False, f"Database error: {e}"
              
 def delete_match(number):
     number -= 1
@@ -91,9 +94,12 @@ def delete_match(number):
             rows = cursor.execute("SELECT * FROM matches ORDER BY id").fetchall()
             match_to_be_deleted_ID = rows[number]['id']
             cursor.execute("DELETE FROM matches where id = ?", (match_to_be_deleted_ID,))
-            
+        
+    
     except sqlite3.Error as e:
-        return f"Database error: {e}"
+        return False, f"Database error: {e}"
+    
+    return True, None
                 
 def edit_match(number, updates):
     number -= 1 
@@ -121,10 +127,9 @@ def edit_match(number, updates):
                     (value,match_ID))
             
             else:
-                return f'Error: {error}'
-            
+                return False, f'Error: {error}'
     except sqlite3.Error as e:
         return f"Database error: {e}"         
         
-
+    return True, None
   
