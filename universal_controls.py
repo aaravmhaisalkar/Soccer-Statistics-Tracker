@@ -81,7 +81,6 @@ class UniversalDropdownInput(ft.Dropdown):
             
         
         super().__init__(
-            
             label=label,
             options= self.option_list
         )
@@ -97,7 +96,6 @@ class UniversalDateInput(ft.Container):
         
         self.date_picker = ft.DatePicker(
             last_date=self.today,
-            current_date=self.today,
             on_change=self.date_picked,
         )
 

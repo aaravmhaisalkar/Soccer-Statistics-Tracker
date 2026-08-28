@@ -106,6 +106,20 @@ class FormBuilder(Container):
         self.on_click_function = on_click_function
         self.match = match
         
+        self.error_column = Column(
+                    visible=False,
+                    controls=[],
+                )
+                
+        self.error_container = Container(
+            visible=False,
+            width = 275,
+            content=self.error_column,
+            border_radius=ft.BorderRadius.all(5),
+            padding=ft.Padding.all(15)
+        )
+                
+        
         self.form_fields = {
             #Match Data -----------
             "opponent_name": UniversalTextInputField(page=self.app_page,label="Opponent Name"),
@@ -139,7 +153,7 @@ class FormBuilder(Container):
             "notes": UniversalTextInputField(page=self.app_page,label="Notes"),
         }
 
-       
+    
         self.form_schema = {
             "Match Data": ["opponent_name", "date", "competition"],
             "Result": ["result", "your_goals", "opponents_goals"],
@@ -160,15 +174,19 @@ class FormBuilder(Container):
                 if self.match is not None:
                     if isinstance(self.form_fields[field], UniversalDateInput):
                         self.form_fields[field].date_selected_text.value = self.match[field]
+                    elif isinstance(self.form_fields[field], UniversalDropdownInput):
+                         self.form_fields[field].value = self.match[field].lower()
                     else:
                         self.form_fields[field].value = self.match[field]
                 
                 self.form.append(self.form_fields[field])
+                
 
             
             self.form.append(ft.Divider())
         
-        self.form.append(
+        self.form.extend([
+            self.error_container,
             ft.Button(
                 width=100,
                 height = 30,
@@ -177,7 +195,7 @@ class FormBuilder(Container):
                 bgcolor=ft.Colors.GREEN_200,
                 elevation=3,
             )
-        )
+        ])
         
         super().__init__(
             content=Column(
@@ -442,6 +460,7 @@ class Edit_Match_Page():
 
         self.all_matches = self.state.all_matches
 
+        
         self.view = ft.View(
             drawer=self.nav_menu,
             padding=ft.Padding(0, 0, 0, 15),
@@ -481,8 +500,8 @@ class Edit_Match_Page():
                 width=350,
                 padding=ft.Padding.all(15),
                 border_radius=ft.BorderRadius.all(8),
-                bgcolor=ft.Colors.RED_50,
-                border=ft.Border.all(1, ft.Colors.RED_200),
+                bgcolor=ft.Colors.LIGHT_GREEN_50,
+                border=ft.Border.all(1, ft.Colors.LIGHT_GREEN_200),
             )
 
             self.view.controls.extend([
@@ -492,9 +511,8 @@ class Edit_Match_Page():
                     content=Column(
                         alignment=ft.MainAxisAlignment.CENTER,
                         controls=[
-                            FormBuilder(page=self.app_page, on_click_function= lambda e: print("e"), match=self.all_matches[3])
-                            # self.selection_table, 
-                            # self.confirmation_message
+                            self.selection_table, 
+                            self.confirmation_message
                         ]
                     )
                 ),
@@ -509,11 +527,11 @@ class Edit_Match_Page():
             controls=[
                 Row(
                     controls=[
-                        ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=ft.Colors.RED_700, size=20),
+                        ft.Icon(ft.Icons.EDIT, color=ft.Colors.LIGHT_GREEN_700, size=20),
                         Text(
-                            value=f'Delete Game #{self.seleted_match}? This cannot be undone.',
+                            value=f'Edit Game #{self.seleted_match}?',
                             size=13,
-                            color=ft.Colors.RED_900,
+                            color=ft.Colors.LIGHT_GREEN_900,
                         ),
                     ]
                 ),
@@ -524,7 +542,8 @@ class Edit_Match_Page():
                         ft.Button(
                             width=100,
                             content="Edit",
-                            bgcolor=ft.Colors.RED_600,
+                            on_click=self.confirmed_edit,
+                            bgcolor=ft.Colors.LIGHT_GREEN_600,
                             color=ft.Colors.WHITE,
                         ),
                     ]
@@ -542,6 +561,27 @@ class Edit_Match_Page():
         self.app_page.update()
         self.seleted_match = ''
 
+    def confirmed_edit(self, e=None):
+        self.confirmation_message.visible = False
+        self.confirmation_message.content = None
+        self.view.controls = [
+            UniversalAppBar(self.app_page),
+            Row(
+                controls=[Text(value="Delete Match", size=20)],
+                alignment=ft.MainAxisAlignment.CENTER
+            ),
+            ft.Divider(),
+            FormBuilder(
+                page=self.app_page, 
+                on_click_function= 
+                lambda e: print("e"), 
+                match=self.all_matches[int(self.seleted_match)]
+            )
+        ]
+        self.app_page.update()
+        self.seleted_match = ''
+        
+        
 
 class Delete_Match_Page():
     def __init__(self, page, state, nav_menu) -> None:
@@ -874,71 +914,8 @@ class Add_Match_Page():
         self.state = state
         self.nav_menu = nav_menu
         
-        self.error_column = Column(
-            visible=False,
-            controls=[],
-        )
         
-        self.error_container = Container(
-            visible=False,
-            width = 275,
-            content=self.error_column,
-            border_radius=ft.BorderRadius.all(5),
-            padding=ft.Padding.all(15)
-        )
-        
-        
-        self.input_controls = {
-            #Ts is very unoptiomized i think 
-            #i hope that i can use like an if statement and cancel out all the ft.dividers and ft.text stuff
-            #otherwise im cooked 😭
-            #Im sorry to future me who has to add shi to this, atp js make a different @ft.control class for it 
-            
-            #Match Data -----------
-            "text1": ft.Text(value="Match Data",size=14),
-            "opponent_name": UniversalTextInputField(page=self.app_page,label="Opponent Name"),
-            "date": UniversalDateInput(page=self.app_page),
-            "competition": UniversalTextInputField(page=self.app_page,label="Competition"),
-            "divider1": ft.Divider(),
-            
-            #Result ---------------
-            "text2": ft.Text(value="Result",size=14),
-            "result": UniversalDropdownInput(page = self.app_page, label="Result", option_values=["Win","Loss","Draw"]),
-            "your_goals": UniversalNumberInputField(page=self.app_page,label="Your Goals",lower_bound=0,upper_bound=infinite_int),
-            "opponents_goals": UniversalNumberInputField(page=self.app_page,label="Opponents Goals",lower_bound=0,upper_bound=infinite_int),
-            "divider2": ft.Divider(),
-            
-            #Player Role/Minutes/Position -----------
-            "text3": ft.Text(value="Role/Minutes/Position",size=14),
-            "role": UniversalDropdownInput(page = self.app_page, label="Role", option_values=["Starter","Substitute"]),
-            #TODO: If you ever wanna add sum, add a checkbox here with the label "Went to Extra Time?"
-            "minutes_played": UniversalNumberInputField(page=self.app_page,label="Minutes",lower_bound=0,upper_bound=120),
-            # TODO: swap position field to UniversalAutoCompleteInput once label + focus-border are sorted
-            "position":  UniversalDropdownInput(page=self.app_page, label="Position", option_values=gui_positions),
-            "divider3": ft.Divider(),
-            
-            #Player Match Stats ----------
-            "text4": ft.Text(value="Player Match Stats",size=14),
-            "goals": UniversalNumberInputField(page=self.app_page,label="Goals",lower_bound=0,upper_bound=infinite_int),
-            "assists": UniversalNumberInputField(page=self.app_page,label="Assists",lower_bound=0,upper_bound=infinite_int),
-            "divider4": ft.Divider(),
-            
-            #Player Discipline
-            "text5": ft.Text(value="Player Discipline",size=14),
-            "yellow_cards": UniversalNumberInputField(page=self.app_page,label="Yellow Cards",lower_bound=0,upper_bound=2),
-            "red_cards": UniversalNumberInputField(page=self.app_page,label="Red Cards",lower_bound=0,upper_bound=1),
-            "divider5": ft.Divider(),
-            
-            #Confidence
-            "text6": ft.Text(value="Confidence (0-10)",size=14),
-            "confidence": UniversalFloatInputField(page=self.app_page,label="Confidence",lower_bound=0,upper_bound=10),
-            "divider6": ft.Divider(),
-            
-            #Notes
-            "text7": ft.Text(value="Notes",size=14),
-            "notes": UniversalTextInputField(page=self.app_page,label="Notes"),
-            "divider7": ft.Divider()
-        }
+        self.form_builder = FormBuilder(page=self.app_page, on_click_function=lambda e: self.save_data())
         
         self.view = ft.View(
             drawer=self.nav_menu,
@@ -952,37 +929,28 @@ class Add_Match_Page():
                     alignment=ft.MainAxisAlignment.CENTER
                 ),
                 ft.Divider(),
-                *self.input_controls.values(),
-                self.error_container,
-                ft.Button(
-                    width=100,
-                    height = 30,
-                    content="Submit",
-                    on_click=self.save_data,
-                    bgcolor=ft.Colors.GREEN_200,
-                    elevation=3,
-                )
+                self.form_builder,
             ]
         )
         
-    def save_data(self,e):
+    def save_data(self,e=None):
         data = {}
-        for control in self.input_controls.values():
+        for key, control in self.form_builder.form_fields.items():
             if isinstance(control, (UniversalTextInputField, UniversalFloatInputField,UniversalNumberInputField, UniversalDropdownInput)):
-                data[str(control.label)] = control.value
+                data[key] = control.value
                 
             elif isinstance(control, UniversalDateInput):
                 data["Date"] = control.selected_date
-        
+                
         result, returned_value = self.state.save_data(data)
         
         if result:
-            self.error_container.visible = True
-            self.error_column.visible = True
-            self.error_container.bgcolor = ft.Colors.GREEN_100
-            self.error_column.controls = [Text("Success! Game added to database.")]
+            self.form_builder.error_container.visible = True
+            self.form_builder.error_column.visible = True
+            self.form_builder.error_container.bgcolor = ft.Colors.GREEN_100
+            self.form_builder.error_column.controls = [Text("Success! Game added to database.")]
             
-            for control in self.input_controls.values():
+            for _, control in self.form_builder.form_fields.items():
                 if isinstance(control, (UniversalTextInputField, UniversalFloatInputField,UniversalNumberInputField)):
                     control.value = ""
                                 
@@ -998,12 +966,12 @@ class Add_Match_Page():
         
         else:
             unique_returned_values = set(returned_value.values())
-            self.error_container.visible = True
-            self.error_column.visible = True
-            self.error_container.bgcolor = ft.Colors.RED_100
-            self.error_column.controls = [Text("Errors:")]
+            self.form_builder.error_container.visible = True
+            self.form_builder.error_column.visible = True
+            self.form_builder.error_container.bgcolor = ft.Colors.RED_100
+            self.form_builder.error_column.controls = [Text("Errors:")]
             for index,value in enumerate(unique_returned_values,1):
-                self.error_column.controls.append(Text(f'{index}. {value}'))
+                self.form_builder.error_column.controls.append(Text(f'{index}. {value}'))
                 
             self.app_page.update()        
 
@@ -1122,7 +1090,6 @@ class AppState:
         #Send Data to Database
         if not validation_result:
             errors["match"] = returned_value
-            print(errors)
             return False, errors
             
         result, error = save_match(match)
