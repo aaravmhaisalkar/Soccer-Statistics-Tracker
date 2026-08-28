@@ -56,7 +56,7 @@ class NavigationMenu(ft.NavigationDrawer):
             2 : '/all_matches',
             3 : '/specific_match',
             4 : '/summary',
-            
+            5 : '/edit',
             6 : '/delete'
         }
         
@@ -100,21 +100,90 @@ class NavigationMenu(ft.NavigationDrawer):
         await self.page.close_drawer()
 
 @ft.control
-class StatContainer(Container):
-    def __init__(self, page: ft.Page, data) -> None:
+class FormBuilder(Container):
+    def __init__(self, page: ft.Page, on_click_function, match = None) -> None:
         self.app_page = page
-        self.number = data[0]
-        self.stat = data[1]
+        self.on_click_function = on_click_function
+        self.match = match
+        
+        self.form_fields = {
+            #Match Data -----------
+            "opponent_name": UniversalTextInputField(page=self.app_page,label="Opponent Name"),
+            "date": UniversalDateInput(page=self.app_page),
+            "competition": UniversalTextInputField(page=self.app_page,label="Competition"),
+            
+            #Result ---------------
+            "result": UniversalDropdownInput(page = self.app_page, label="Result", option_values=["Win","Loss","Draw"]),
+            "your_goals": UniversalNumberInputField(page=self.app_page,label="Your Goals",lower_bound=0,upper_bound=infinite_int),
+            "opponents_goals": UniversalNumberInputField(page=self.app_page,label="Opponents Goals",lower_bound=0,upper_bound=infinite_int),
+            
+            #Player Role/Minutes/Position -----------
+            "role": UniversalDropdownInput(page = self.app_page, label="Role", option_values=["Starter","Substitute"]),
+            #TODO: If you ever wanna add sum, add a checkbox here with the label "Went to Extra Time?"
+            "minutes": UniversalNumberInputField(page=self.app_page,label="Minutes",lower_bound=0,upper_bound=120),
+            # TODO: swap position field to UniversalAutoCompleteInput once label + focus-border are sorted
+            "position":  UniversalDropdownInput(page=self.app_page, label="Position", option_values=gui_positions),
+            
+            #Player Match Stats ----------
+            "goals": UniversalNumberInputField(page=self.app_page,label="Goals",lower_bound=0,upper_bound=infinite_int),
+            "assists": UniversalNumberInputField(page=self.app_page,label="Assists",lower_bound=0,upper_bound=infinite_int),
+            
+            #Player Discipline
+            "yellow_cards": UniversalNumberInputField(page=self.app_page,label="Yellow Cards",lower_bound=0,upper_bound=2),
+            "red_cards": UniversalNumberInputField(page=self.app_page,label="Red Cards",lower_bound=0,upper_bound=1),
+            
+            #Confidence
+            "confidence": UniversalFloatInputField(page=self.app_page,label="Confidence",lower_bound=0,upper_bound=10),
+            
+            #Notes
+            "notes": UniversalTextInputField(page=self.app_page,label="Notes"),
+        }
+
+       
+        self.form_schema = {
+            "Match Data": ["opponent_name", "date", "competition"],
+            "Result": ["result", "your_goals", "opponents_goals"],
+            "Role/Minutes/Position": ["role", "minutes", "position"],
+            "Player Match Stats": ["goals", "assists"],
+            "Player Discipline": ["yellow_cards", "red_cards"],
+            "Confidence (0-10)": ["confidence"],
+            "Notes": ["notes"],
+        }
+        
+        self.form = []
+        
+        
+        for heading, fields in self.form_schema.items():
+            self.form.append(ft.Text(value=heading,size=14))
+            
+            for field in fields:
+                if self.match is not None:
+                    if isinstance(self.form_fields[field], UniversalDateInput):
+                        self.form_fields[field].date_selected_text.value = self.match[field]
+                    else:
+                        self.form_fields[field].value = self.match[field]
+                
+                self.form.append(self.form_fields[field])
+
+            
+            self.form.append(ft.Divider())
+        
+        self.form.append(
+            ft.Button(
+                width=100,
+                height = 30,
+                content="Submit",
+                on_click=self.on_click_function,
+                bgcolor=ft.Colors.GREEN_200,
+                elevation=3,
+            )
+        )
         
         super().__init__(
             content=Column(
-                spacing=1,
                 alignment=ft.MainAxisAlignment.CENTER,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                controls=[
-                    Text(value=f"{self.number}", size=25),
-                    Text(value=f"{self.stat}", size=17)
-                ]
+                controls=self.form
             )
         )
 
@@ -178,8 +247,6 @@ class MatchDisplayTable_SMALL(Container):
             )
         )
         
-
-
 #Full rundown on a match - All stats from the database.
 @ft.control
 class MatchDisplayTable_FULL(Container):
@@ -343,8 +410,138 @@ class StatRow(Container):
         )
 
 
+@ft.control
+class StatContainer(Container):
+    def __init__(self, page: ft.Page, data) -> None:
+        self.app_page = page
+        self.number = data[0]
+        self.stat = data[1]
+        
+        super().__init__(
+            content=Column(
+                spacing=1,
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    Text(value=f"{self.number}", size=25),
+                    Text(value=f"{self.stat}", size=17)
+                ]
+            )
+        )
+
+
 
 #PAGES ----------------------------------------------
+
+class Edit_Match_Page():
+    def __init__(self, page, state, nav_menu) -> None:
+        self.app_page = page
+        self.state = state
+        self.nav_menu = nav_menu
+        self.seleted_match = ''
+
+        self.all_matches = self.state.all_matches
+
+        self.view = ft.View(
+            drawer=self.nav_menu,
+            padding=ft.Padding(0, 0, 0, 15),
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            scroll=ft.ScrollMode.AUTO,
+            controls=[
+                UniversalAppBar(self.app_page),
+                Row(
+                    controls=[Text(value="Delete Match", size=20)],
+                    alignment=ft.MainAxisAlignment.CENTER
+                ),
+                ft.Divider(),
+            ]
+        )
+
+        errors = self.state.build_status_message()
+
+        if errors != None:
+            self.view.controls.append(errors)
+
+        else:
+            self.selection_table = Column(
+                controls=[
+                    MatchDisplayTable_SMALL(
+                        page=self.app_page,
+                        state=self.state,
+                        data=self.all_matches,
+                        nav_menu=self.nav_menu,
+                        on_tap_function=self.selection_table_on_tap
+                    )
+                ]
+            )
+
+            self.confirmation_message = Container(
+                visible=False,
+                alignment=ft.Alignment.CENTER,
+                width=350,
+                padding=ft.Padding.all(15),
+                border_radius=ft.BorderRadius.all(8),
+                bgcolor=ft.Colors.RED_50,
+                border=ft.Border.all(1, ft.Colors.RED_200),
+            )
+
+            self.view.controls.extend([
+                Container(
+                    alignment=ft.Alignment.CENTER,
+                    padding=ft.Padding.symmetric(horizontal=5),
+                    content=Column(
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        controls=[
+                            FormBuilder(page=self.app_page, on_click_function= lambda e: print("e"), match=self.all_matches[3])
+                            # self.selection_table, 
+                            # self.confirmation_message
+                        ]
+                    )
+                ),
+            ])
+
+    def selection_table_on_tap(self, e, num):
+        self.seleted_match = num
+
+        controls = Column(
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=10,
+            controls=[
+                Row(
+                    controls=[
+                        ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=ft.Colors.RED_700, size=20),
+                        Text(
+                            value=f'Delete Game #{self.seleted_match}? This cannot be undone.',
+                            size=13,
+                            color=ft.Colors.RED_900,
+                        ),
+                    ]
+                ),
+                Row(
+                    alignment=ft.MainAxisAlignment.END,
+                    controls=[
+                        ft.Button(width=100, content="Cancel", on_click=self.disable_edit),
+                        ft.Button(
+                            width=100,
+                            content="Edit",
+                            bgcolor=ft.Colors.RED_600,
+                            color=ft.Colors.WHITE,
+                        ),
+                    ]
+                ),
+            ]
+        )
+
+        self.confirmation_message.visible = True
+        self.confirmation_message.content = controls
+        self.app_page.update()
+
+    def disable_edit(self, e=None):
+        self.confirmation_message.visible = False
+        self.confirmation_message.content = None
+        self.app_page.update()
+        self.seleted_match = ''
+
 
 class Delete_Match_Page():
     def __init__(self, page, state, nav_menu) -> None:
@@ -966,9 +1163,9 @@ class Router():
             case '/specific_match':
                 return  Specific_Match_Page(*general_controls).view
             case '/summary':
-                return  Season_Summary_Page(*general_controls).view
-            
-            
+                return Season_Summary_Page(*general_controls).view
+            case '/edit':
+                return Edit_Match_Page(*general_controls).view
             case '/delete':
                 return  Delete_Match_Page(*general_controls).view
             case _:

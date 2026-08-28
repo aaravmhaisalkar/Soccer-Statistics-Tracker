@@ -1,9 +1,12 @@
-import json
 import sqlite3
 from backend.validation import general_validation
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATABASE_PATH = BASE_DIR / "match_data.db"
 
 def init_database():
-    with sqlite3.connect('match_data.db') as conn:    
+    with sqlite3.connect(DATABASE_PATH) as conn:    
         cursor = conn.cursor()    
         cursor.execute("""CREATE TABLE IF NOT EXISTS matches(
             id INTEGER PRIMARY KEY,
@@ -28,7 +31,7 @@ def init_database():
 
 def save_match(stats):
     try:
-        with sqlite3.connect('match_data.db') as conn:    
+        with sqlite3.connect(DATABASE_PATH) as conn:    
                 cursor = conn.cursor()    
                 cursor.execute("""
                 INSERT INTO matches (
@@ -75,7 +78,7 @@ def save_match(stats):
 
 def load_all_matches():
     try:
-        with sqlite3.connect('match_data.db') as conn:
+        with sqlite3.connect(DATABASE_PATH) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM matches ORDER BY id")
@@ -88,7 +91,7 @@ def load_all_matches():
 def delete_match(number):
     number -= 1
     try:
-        with sqlite3.connect('match_data.db') as conn:
+        with sqlite3.connect(DATABASE_PATH) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             rows = cursor.execute("SELECT * FROM matches ORDER BY id").fetchall()
@@ -104,7 +107,7 @@ def delete_match(number):
 def edit_match(number, updates):
     number -= 1 
     try:
-        with sqlite3.connect('match_data.db') as conn:
+        with sqlite3.connect(DATABASE_PATH) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             rows = cursor.execute("SELECT * FROM matches ORDER BY id").fetchall()

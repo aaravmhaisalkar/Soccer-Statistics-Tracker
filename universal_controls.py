@@ -9,8 +9,10 @@ class UniversalTextInputField(ft.TextField):
     def __init__(self, page: ft.Page, label) -> None:
         self.app_page = page  
         
+            
         super().__init__(
             label=label,
+            
         )
 
 @ft.control
@@ -20,8 +22,10 @@ class UniversalNumberInputField(ft.TextField):
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         
+        
         super().__init__(
             label=label,
+            
             keyboard_type=ft.KeyboardType.NUMBER,
             input_filter= ft.NumbersOnlyInputFilter(),
             on_blur = self.limit_inputs
@@ -42,7 +46,10 @@ class UniversalFloatInputField(ft.TextField):
         self.app_page = page  
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
+        
+        
         super().__init__(
+            
             label=label,
             keyboard_type=ft.KeyboardType.NUMBER,
             input_filter= ft.InputFilter(
@@ -68,11 +75,13 @@ class UniversalDropdownInput(ft.Dropdown):
         self.option_list = []
         self.option_values = option_values
         
+        
         for option in self.option_values:
             self.option_list.append(ft.DropdownOption(key=option.lower(), text=option.title()))
             
         
         super().__init__(
+            
             label=label,
             options= self.option_list
         )
@@ -84,8 +93,7 @@ class UniversalDateInput(ft.Container):
         
         self.today = datetime.datetime.today()
         self.selected_date = datetime.datetime.today().strftime('%m/%d/%Y')
-        self.date_selected_text = ft.Text(value="", size=15)
-
+        self.date_selected_text = ft.Text(value="",size=15)
         
         self.date_picker = ft.DatePicker(
             last_date=self.today,
