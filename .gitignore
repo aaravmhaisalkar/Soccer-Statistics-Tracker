@@ -1,0 +1,107 @@
+# ==========================
+# Python
+# ==========================
+
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# ==========================
+# Virtual Environments
+# ==========================
+
+venv/
+.venv/
+env/
+ENV/
+
+# ==========================
+# Testing / Coverage
+# ==========================
+
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ==========================
+# Project Data
+# ==========================
+
+# Local match data
+matches.json
+
+# SQLite databases (future)
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups
+*.bak
+*.backup
+
+# ==========================
+# IDE / Editor Files
+# ==========================
+
+# VS Code
+.vscode/
+
+# PyCharm / IntelliJ
+.idea/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ==========================
+# OS Generated Files
+# ==========================
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# ==========================
+# Logs
+# ==========================
+
+*.log
+
+# ==========================
+# Environment Variables
+# ==========================
+
+.env
+.env.*
+
+# ==========================
+# GUI / Build Files (future)
+# ==========================
+
+# PyInstaller
+build/
+dist/
+*.spec
+.flet
+
+# ==========================
+# Temporary Files
+# ==========================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+#Custom
+Deprecated/
