@@ -77,7 +77,7 @@ class UniversalDropdownInput(ft.Dropdown):
         
         
         for option in self.option_values:
-            self.option_list.append(ft.DropdownOption(key=option.lower(), text=option.title()))
+            self.option_list.append(ft.DropdownOption(key=option.title(), text=option.title()))
             
         
         super().__init__(

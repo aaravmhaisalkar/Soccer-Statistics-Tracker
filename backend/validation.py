@@ -1,27 +1,31 @@
 from typing import Tuple, Optional
 def validate_match_result(your_goals, opponents_goals, result) -> Tuple[bool, Optional[str]]:
     if result == "Win":
-        if your_goals <= opponents_goals:
+        if int(your_goals) <= int(opponents_goals):
             return False, "Your goals can't be lower then opponent's goals when the result is a win."
         return True, None
     elif result == "Loss":
-        if your_goals >= opponents_goals:
+        if int(your_goals) >= int(opponents_goals):
             return False, "Your goals can't be greater then opponent's goals when the result is a loss."
         return True, None
     elif result == "Draw":
-        if your_goals != opponents_goals:
+        if int(your_goals) != int(opponents_goals):
             return False, "Your goals can't be different from the opponent's goals when the result is a draw."
         return True, None
     return False, "Bro idk how you got here"
     
 def validate_player_role(role, minutes_played, position):
     if role == "Starter":
-        if minutes_played < 1:
+        if int(minutes_played) < 1:
             return False, "A starter cannot play 0 minutes."
+    elif role == "Substitute" and position == "Bench":
+        if int(minutes_played) > 0:
+            return False, "A substitute on the bench cannot play more then 0 minutes."
+        
     return True, None
 
 def validate_player_stats(max_goals_or_assists, goals, assists):
-    if (goals+assists) > max_goals_or_assists:
+    if (int(goals)+int(assists)) > int(max_goals_or_assists):
         return False, "Goals and assists combined cannot be greater than total goals scored by your team."
     return True, None
 

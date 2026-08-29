@@ -1,5 +1,4 @@
 #Misc Imports 
-from typing import Any
 import asyncio
 import inspect
 import datetime
@@ -8,7 +7,7 @@ import datetime
 from backend.validation import general_validation
 from backend.input_validation_gui import general_input_check
 from backend.display import display_all_matches
-from backend.database import load_all_matches,init_database, save_match, delete_match
+from backend.database import load_all_matches,init_database, save_match, delete_match, edit_match
 from backend.stats import show_summary
 from backend.rules import gui_positions
 #Control Imports
@@ -174,8 +173,10 @@ class FormBuilder(Container):
                 if self.match is not None:
                     if isinstance(self.form_fields[field], UniversalDateInput):
                         self.form_fields[field].date_selected_text.value = self.match[field]
+                        self.form_fields[field].date_picker.value = self.match[field]
+                        self.form_fields[field].selected_date = self.match[field]
                     elif isinstance(self.form_fields[field], UniversalDropdownInput):
-                         self.form_fields[field].value = self.match[field].lower()
+                         self.form_fields[field].value = self.match[field]
                     else:
                         self.form_fields[field].value = self.match[field]
                 
@@ -457,7 +458,7 @@ class Edit_Match_Page():
         self.state = state
         self.nav_menu = nav_menu
         self.seleted_match = ''
-
+        self.form_builder :FormBuilder | str  = ''
         self.all_matches = self.state.all_matches
 
         
@@ -469,7 +470,7 @@ class Edit_Match_Page():
             controls=[
                 UniversalAppBar(self.app_page),
                 Row(
-                    controls=[Text(value="Delete Match", size=20)],
+                    controls=[Text(value="Edit Match", size=20)],
                     alignment=ft.MainAxisAlignment.CENTER
                 ),
                 ft.Divider(),
@@ -560,27 +561,65 @@ class Edit_Match_Page():
         self.confirmation_message.content = None
         self.app_page.update()
         self.seleted_match = ''
+        self.form_builder = ''
 
     def confirmed_edit(self, e=None):
         self.confirmation_message.visible = False
         self.confirmation_message.content = None
+        
+        self.form_builder = FormBuilder(
+                        page=self.app_page, 
+                        on_click_function= lambda e: self.edit_match(self.seleted_match),
+                        match=self.all_matches[int(self.seleted_match)]
+                    )
+        
         self.view.controls = [
             UniversalAppBar(self.app_page),
             Row(
-                controls=[Text(value="Delete Match", size=20)],
+                controls=[Text(value="Edit Match", size=20)],
                 alignment=ft.MainAxisAlignment.CENTER
             ),
             ft.Divider(),
-            FormBuilder(
-                page=self.app_page, 
-                on_click_function= 
-                lambda e: print("e"), 
-                match=self.all_matches[int(self.seleted_match)]
-            )
+            self.form_builder
         ]
         self.app_page.update()
-        self.seleted_match = ''
         
+    async def update_page_on_success(self):
+        route = self.app_page.route
+        self.seleted_match = ''
+        self.form_builder = ''
+        await self.app_page.push_route('')
+        await self.app_page.push_route(route)
+    
+    def edit_match(self, match_number, e=None):
+        assert isinstance(self.form_builder, FormBuilder)
+        
+        original_match = self.all_matches[match_number]
+        
+        data = {}
+        for key, control in self.form_builder.form_fields.items(): 
+            if isinstance(control, (UniversalTextInputField, UniversalFloatInputField,UniversalNumberInputField, UniversalDropdownInput)):
+                data[key] = control.value
+                
+            elif isinstance(control, UniversalDateInput):
+                data["date"] = control.selected_date
+            
+            
+        
+        result, returned_value = self.state.edit_match(match_number = match_number, edited_match = data)
+        
+        if result:
+            asyncio.create_task(self.update_page_on_success())
+        
+        else:
+            self.form_builder.error_container.visible = True
+            self.form_builder.error_column.visible = True
+            self.form_builder.error_container.bgcolor = ft.Colors.RED_100
+            self.form_builder.error_column.controls = [Text("Errors:")]
+            self.form_builder.error_column.controls.append(Text(f'1. {returned_value}'))
+                
+            self.app_page.update()        
+    
         
 
 class Delete_Match_Page():
@@ -823,10 +862,6 @@ class All_Matches_Page():
                 )
             ])
         
-        
-        
-        
-        
     async def navigate_to_full_data(self,e, num):
         self.nav_menu.selected_index = 3
         self.state.all_match_selected_match_id = int(num)
@@ -940,7 +975,7 @@ class Add_Match_Page():
                 data[key] = control.value
                 
             elif isinstance(control, UniversalDateInput):
-                data["Date"] = control.selected_date
+                data["date"] = control.selected_date
                 
         result, returned_value = self.state.save_data(data)
         
@@ -1106,6 +1141,13 @@ class AppState:
             return True, None
         else:
             return False, error
+        
+    def edit_match(self, match_number, edited_match):
+            result, error = edit_match(match_number=match_number, edited_match=edited_match)
+            if result:
+                return True, None
+            else:
+                return False, error
         
     def build_status_message(self):
         match self.data_status:

@@ -104,33 +104,28 @@ def delete_match(number):
     
     return True, None
                 
-def edit_match(number, updates):
-    number -= 1 
+def edit_match(match_number, edited_match):
+    match_number -= 1 
     try:
         with sqlite3.connect(DATABASE_PATH) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
+            
             rows = cursor.execute("SELECT * FROM matches ORDER BY id").fetchall()
-            
-            match_data = rows[number]
+            match_data = rows[match_number]
             match_ID = match_data['id']
+            validation_result, error = general_validation(edited_match)
             
-            temp_updated_match = dict(match_data)
-            
-            for stat, value in updates.items():
-                temp_updated_match[stat] = value
-                
-            validation_result, error = general_validation(temp_updated_match)
-            
-                
+            print(error)
             if validation_result:
-                for stat,value in updates.items():
+                for stat,value in edited_match.items():
                     cursor.execute(
                     f"UPDATE matches SET {stat} = ? WHERE id = ?", 
                     (value,match_ID))
             
             else:
                 return False, f'Error: {error}'
+            
     except sqlite3.Error as e:
         return f"Database error: {e}"         
         
