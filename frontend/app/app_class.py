@@ -1,7 +1,7 @@
 #File Imports
 from frontend.router import Router
 #Control Imports
-from unique_controls import NavigationMenu
+from frontend.controls.unique_controls import NavigationMenu
 #Flet Imports
 import flet as ft
 
