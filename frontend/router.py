@@ -7,6 +7,7 @@ from frontend.pages.season_summary import Season_Summary_Page
 from frontend.pages.edit_match import Edit_Match_Page
 from frontend.pages.delete_match import Delete_Match_Page
 from frontend.pages.error_404 import Error404_NotFound_Page
+from frontend.pages.auth_page import Auth_Page
 
 
 #Different pages routing connector
@@ -14,6 +15,8 @@ class Router():
     @staticmethod
     def get_views(route, general_controls):
         match route:
+            case '/auth':
+                return Auth_Page(*general_controls).view
             case '/home':
                 return HomePage(*general_controls).view
             case '/add':

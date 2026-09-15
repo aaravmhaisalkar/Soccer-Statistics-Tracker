@@ -2,23 +2,30 @@
 from backend.validation import general_validation
 from backend.input_validation_v2 import general_input_check
 from backend.display import display_all_matches
-from backend.database import load_all_matches, save_match, delete_match, edit_match
+from backend.database import load_all_matches, save_match, delete_match, edit_match, sign_in, sign_up
 from backend.stats import show_summary
 
 #Flet Imports
 import flet as ft
 from flet import Text
 
+#Database import
+import supabase as sb
+
 #Main soure of app data
 #basically links the database/backend to the frontend/gui
 class AppState:
     #Anything can update this, since it passes into every view
-    def __init__(self):
+    def __init__(self, supabase):
         #Good = good data, bad = error in data, empty = no data
         self.data_status = "" 
         self.all_match_selected_match_id = ''
         self.all_matches = {}
         self.all_matches_summary = {}
+        
+        self.user = None
+        
+        self.supabase = supabase
 
     def refresh(self):
         all_matches_check, all_matches = load_all_matches()
@@ -99,3 +106,29 @@ class AppState:
             case _:
                 return None
      
+    def sign_up_user(self, email, password):
+        sucess, result = sign_up(self.supabase, email, password)
+        
+        if not sucess:
+            return False, result
+        
+        if self.user is None:
+            user_result = self.supabase.auth.get_user()
+            if user_result:
+                self.user = user_result
+        
+                
+        return True, None
+
+    def sign_in_user(self, email, password):
+        sucess, result = sign_in(self.supabase, email, password)
+        
+        if not sucess:
+            return False, result
+        
+        if self.user is None:
+            user_result = self.supabase.auth.get_user()
+            if user_result:
+                self.user = user_result
+        
+        return True, None
