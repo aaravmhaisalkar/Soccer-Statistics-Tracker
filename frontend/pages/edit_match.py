@@ -123,13 +123,14 @@ class Edit_Match_Page():
     def confirmed_edit(self, e=None):
         self.confirmation_message.visible = False
         self.confirmation_message.content = None
-        
+        print(self.all_matches[int(self.seleted_match)])
         self.form_builder = FormBuilder(
                         page=self.app_page, 
                         on_click_function= lambda e: self.edit_match(self.seleted_match),
                         match=self.all_matches[int(self.seleted_match)]
                     )
         
+        self.view.controls.clear()
         self.view.controls = [
             UniversalAppBar(self.app_page),
             Row(

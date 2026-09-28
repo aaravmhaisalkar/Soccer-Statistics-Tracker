@@ -91,8 +91,8 @@ class UniversalDateInput(ft.Container):
         self.app_page = page  
         
         self.today = datetime.datetime.today()
-        self.selected_date = datetime.datetime.today().strftime('%m/%d/%Y')
-        self.date_selected_text = ft.Text(value="",size=15)
+        self.selected_date = datetime.datetime.today().strftime('%Y-%m-%d')
+        self.date_selected_text = ft.Text(value=f'{datetime.datetime.today().strftime('%Y-%m-%d')}',size=15)
         
         self.date_picker = ft.DatePicker(
             last_date=self.today,
@@ -121,6 +121,5 @@ class UniversalDateInput(ft.Container):
         )
     
     def date_picked(self, e):
-        self.selected_date = e.control.value.strftime('%m/%d/%Y')
+        self.selected_date = e.control.value.strftime('%Y-%m-%d')
         self.date_selected_text.value = f'{self.selected_date}'
-

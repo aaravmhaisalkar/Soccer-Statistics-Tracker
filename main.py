@@ -15,8 +15,6 @@ import flet as ft
 # Learn proper UX / GUI
 # Learn Typescript / React OR Dart / Flutter for better frontent
 
-# TODO: Fix the datapicker error and also a new bug with the index selected in navbar not resetting after logout
-
 #RUN PROGRAM / INIT --------------------
 
 #Initalize the app and hand it off the App() class

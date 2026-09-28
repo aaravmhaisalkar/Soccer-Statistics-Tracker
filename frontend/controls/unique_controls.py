@@ -1,6 +1,6 @@
 #Misc Imports 
 import inspect
-
+import datetime
 #File imports
 from backend.rules import gui_positions, infinite_int
 from frontend.controls.universal_controls import UniversalDateInput,UniversalDropdownInput,UniversalFloatInputField,UniversalNumberInputField,UniversalTextInputField
@@ -162,9 +162,10 @@ class FormBuilder(Container):
             for field in fields:
                 if self.match is not None:
                     if isinstance(self.form_fields[field], UniversalDateInput):
+                        print(self.match[field])
                         self.form_fields[field].date_selected_text.value = self.match[field]
-                        self.form_fields[field].date_picker.value = self.match[field]
-                        self.form_fields[field].selected_date = self.match[field]
+                        self.form_fields[field].date_picker.value = datetime.datetime.strptime(self.match[field], "%Y-%m-%d")
+                        self.form_fields[field].selected_date = datetime.datetime.strptime(self.match[field], "%Y-%m-%d")
                     elif isinstance(self.form_fields[field], UniversalDropdownInput):
                          self.form_fields[field].value = self.match[field]
                     else:
