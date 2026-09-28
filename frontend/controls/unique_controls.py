@@ -44,7 +44,8 @@ class NavigationMenu(ft.NavigationDrawer):
             3 : '/specific_match',
             4 : '/summary',
             5 : '/edit',
-            6 : '/delete'
+            6 : '/delete',
+            7 : '/account'
         }
         
         super().__init__(
@@ -69,6 +70,7 @@ class NavigationMenu(ft.NavigationDrawer):
                     ft.NavigationDrawerDestination(label='Season Summary', icon=ft.Icons.STACKED_BAR_CHART_OUTLINED, selected_icon=ft.Icons.STACKED_BAR_CHART),
                     ft.NavigationDrawerDestination(label='Edit Match', icon=ft.Icons.EDIT_OUTLINED, selected_icon=ft.Icons.EDIT),
                     ft.NavigationDrawerDestination(label='Delete Match', icon=ft.Icons.DELETE_OUTLINED, selected_icon=ft.Icons.DELETE),
+                    ft.NavigationDrawerDestination(label='Account', icon=ft.Icons.ACCOUNT_CIRCLE_OUTLINED, selected_icon=ft.Icons.ACCOUNT_CIRCLE),
                 ]
         )
     

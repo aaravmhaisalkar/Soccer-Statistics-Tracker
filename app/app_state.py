@@ -2,7 +2,7 @@
 from backend.validation import general_validation
 from backend.input_validation_v2 import general_input_check
 from backend.display import display_all_matches
-from backend.database import load_all_matches, save_match, delete_match, edit_match, sign_in, sign_up
+from backend.database import load_all_matches, save_match, delete_match, edit_match, sign_in, sign_up, signout
 from backend.stats import show_summary
 
 #Flet Imports
@@ -23,6 +23,7 @@ class AppState:
         self.all_matches = {}
         self.all_matches_summary = {}
         
+        #like user stuff 
         self.user = None
         
         self.supabase = supabase
@@ -142,3 +143,20 @@ class AppState:
                 self.user = user_result
         
         return True, None
+
+    def signout(self):
+        sucess, result = signout(self.supabase, self.user)
+        
+        if not sucess:
+            return False, result
+                
+        if self.user is not None:
+            self.user = None
+            self.data_status = "" 
+            self.all_match_selected_match_id = ''
+            self.all_matches = {}
+            self.all_matches_summary = {}
+            
+            return True, None
+        
+ 

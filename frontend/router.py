@@ -9,6 +9,7 @@ from frontend.pages.delete_match import Delete_Match_Page
 from frontend.pages.error_404 import Error404_NotFound_Page
 from frontend.pages.auth_page import Auth_Page
 from frontend.pages.loading_page import Loading_Page
+from frontend.pages.account_page import Account_Page
 
 #Different pages routing connector
 class Router():
@@ -33,5 +34,7 @@ class Router():
                 return  Delete_Match_Page(*general_controls).view
             case '/loading':
                 return Loading_Page(*general_controls).view
+            case '/account':
+                return Account_Page(*general_controls).view
             case _:
                 return Error404_NotFound_Page(*general_controls).view
