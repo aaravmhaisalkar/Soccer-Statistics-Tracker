@@ -38,6 +38,7 @@ class All_Matches_Page():
         
         self.all_matches = self.state.all_matches
         
+
         self.all_matches_datatable = MatchDisplayTable_SMALL(
             page=self.app_page,
             state=self.state,

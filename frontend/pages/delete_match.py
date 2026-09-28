@@ -118,7 +118,7 @@ class Delete_Match_Page():
             self.seleted_match = ''
             self.disable_delete()
             #Ok so this looks janky icl, but best i couldve done for a actual reset. And i mean it works.
-            await self.app_page.push_route('')
+            await self.app_page.push_route('/loading')
             await self.app_page.push_route(route)
         else:
             self.confirmation_message.content = Column(

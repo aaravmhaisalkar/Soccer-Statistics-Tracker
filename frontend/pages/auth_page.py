@@ -13,6 +13,7 @@ class Auth_Page():
                 label='Email'
             ),
             'password' : ft.TextField(
+                can_reveal_password=True,
                 label='Password',
                 password=True
             ),

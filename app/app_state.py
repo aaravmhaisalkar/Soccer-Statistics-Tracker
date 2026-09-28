@@ -28,28 +28,33 @@ class AppState:
         self.supabase = supabase
 
     def refresh(self):
-        all_matches_check, all_matches = load_all_matches()
+        if self.user:
+            all_matches_check, all_matches = load_all_matches(self.supabase, self.user)
+
+            if not all_matches_check:
+                self.data_status = "bad"
+                all_matches = {}
+                return
         
-        if not all_matches_check:
-            self.data_status = "bad"
-            all_matches = {}
-            return
-    
-        
-        #We do this 'usable_all_matches' thing bc sqlite3 returns sqlite.Row objects not "good" data
-        useable_data_check, usable_all_matches_data = display_all_matches(all_matches=all_matches)
-        summery_check, summery_data = show_summary(all_matches=all_matches)
-        
-        if summery_check and useable_data_check:
-            self.data_status = "good"
-            self.all_matches_summary = summery_data
-            self.all_matches = usable_all_matches_data
-            return
-        
+            
+            #We do this 'usable_all_matches' thing bc sqlite3 returns sqlite.Row objects not "good" data
+            useable_data_check, usable_all_matches_data = display_all_matches(all_matches=all_matches)
+            summery_check, summery_data = show_summary(all_matches=all_matches)
+            
+            if summery_check and useable_data_check:
+                self.data_status = "good"
+                self.all_matches_summary = summery_data
+                self.all_matches = usable_all_matches_data
+                return
+            
+            else:
+                self.data_status = "empty"
+                return
+            
         else:
             self.data_status = "empty"
             return
-    
+            
     def save_data(self,data_dict):
         #Validate Data
         errors = {}
@@ -75,7 +80,7 @@ class AppState:
             errors["match"] = returned_value
             return False, errors
             
-        result, error = save_match(match)
+        result, error = save_match(self.supabase, self.user, match)
         
         if not result:
             errors["database"] = error
@@ -84,18 +89,23 @@ class AppState:
         return True, None
     
     def delete_match(self, match_number):
-        result, error = delete_match(match_number)
+        #Basically, pulling the match from all matches using the UI match number, and extracting the database id
+        id = self.all_matches[match_number].get("id")
+        result, error = delete_match(self.supabase, self.user, id)
         if result:
             return True, None
         else:
             return False, error
         
     def edit_match(self, match_number, edited_match):
-            result, error = edit_match(match_number=match_number, edited_match=edited_match)
-            if result:
-                return True, None
-            else:
-                return False, error
+        #Basically, pulling the match from all matches using the UI match number, and extracting the database id
+        id = self.all_matches[match_number].get("id")
+        
+        result, error = edit_match(self.supabase, self.user, id, edited_match)
+        if result:
+            return True, None
+        else:
+            return False, error
         
     def build_status_message(self):
         match self.data_status:

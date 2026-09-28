@@ -6,6 +6,7 @@ def display_all_matches(all_matches):
     
     for i, match in enumerate(all_matches, 1):
         matches_dict[i] = {
+            "id" : match['id'],
             "opponent_name": match['opponent_name'],
             "date": match['date'],
             "competition": match['competition'],

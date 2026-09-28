@@ -18,8 +18,16 @@ class App():
     
     def route_change(self, e = None):
         self.page.views.clear()
-        self.state.refresh()
-        print('yea ok so we got this route:',self.page.route)
-        new_view = Router.get_views(self.page.route, self.general_controls)
-        self.page.views.append(new_view)
-        self.page.update()
+        
+        if self.page.route != '/auth':
+            self.state.refresh()
+            print('yea ok so we got this route:',self.page.route)
+            new_view = Router.get_views(self.page.route, self.general_controls)
+            self.page.views.append(new_view)
+            self.page.update()
+        
+        else:
+            print('yea ok so we got this route:',self.page.route)
+            new_view = Router.get_views(self.page.route, self.general_controls)
+            self.page.views.append(new_view)
+            self.page.update()

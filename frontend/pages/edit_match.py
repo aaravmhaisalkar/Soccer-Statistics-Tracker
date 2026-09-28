@@ -145,13 +145,11 @@ class Edit_Match_Page():
         route = self.app_page.route
         self.seleted_match = ''
         self.form_builder = ''
-        await self.app_page.push_route('')
+        await self.app_page.push_route('/loading')
         await self.app_page.push_route(route)
     
     def edit_match(self, match_number, e=None):
         assert isinstance(self.form_builder, FormBuilder)
-        
-        original_match = self.all_matches[match_number]
         
         data = {}
         for key, control in self.form_builder.form_fields.items(): 
