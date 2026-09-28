@@ -61,7 +61,7 @@ class Account_Page():
                     
                     border=ft.Border.all(3,ft.Colors.BLACK),
                     border_radius=ft.BorderRadius.all(10),
-                    width=270,
+                    width=325,
                 ),
                 
             ]
@@ -69,7 +69,6 @@ class Account_Page():
         
     async def logout(self, e):
         sucess, result = self.state.signout()
-        print(result)
         if not sucess:
             self.error_bar.visible = True
             self.error_bar.content = ft.Column(controls=[ft.Text("Error:"), ft.Text(str(result))], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
@@ -83,5 +82,7 @@ class Account_Page():
 
         
         print('signing out...')
+        
+        self.nav_menu.selected_index = 0
         
         await self.app_page.push_route("/auth")
